@@ -83,9 +83,9 @@ CREATE TABLE IF NOT EXISTS seguros (
 
 -- Insertar Vendedores (Passwords encriptados con bcrypt para '$2y$10$...' correspondientes a 'password123')
 INSERT INTO vendedores (id, nombre, email, password) VALUES
-(1, 'Juan Pérez', 'juan.perez@automotriz.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'),
-(2, 'María Gómez', 'maria.gomez@automotriz.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'),
-(3, 'Carlos Rodríguez', 'carlos.rodriguez@automotriz.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi')
+(1, 'Juan Pérez', 'juan.perez@automotriz.com', '$2y$10$Jin9DjsA2VJG8Xtcve2y2evddnoEiIl96KVtAz6FJ9IF4cck5mcja'),
+(2, 'María Gómez', 'maria.gomez@automotriz.com', '$2y$10$Jin9DjsA2VJG8Xtcve2y2evddnoEiIl96KVtAz6FJ9IF4cck5mcja'),
+(3, 'Carlos Rodríguez', 'carlos.rodriguez@automotriz.com', '$2y$10$Jin9DjsA2VJG8Xtcve2y2evddnoEiIl96KVtAz6FJ9IF4cck5mcja')
 ON DUPLICATE KEY UPDATE id=id;
 
 -- Insertar Vehículos
