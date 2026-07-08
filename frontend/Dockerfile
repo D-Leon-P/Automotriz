@@ -4,7 +4,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copiar definiciones de dependencias primero para optimizar la caché de capas de Docker
-COPY package.json package-lock.json ./
+COPY package.json package-lock.js[o]n ./
 
 # Instalar dependencias
 RUN npm install
