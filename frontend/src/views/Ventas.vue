@@ -1,0 +1,311 @@
+<template>
+  <div class="p-8 max-w-7xl mx-auto space-y-8">
+    <!-- Encabezado -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-3xl font-extrabold tracking-tight text-slate-100">Registro de Ventas</h2>
+        <p class="text-slate-400 mt-1">Monitorea los cierres efectivos y documenta los motivos de pérdida.</p>
+      </div>
+      <button
+        @click="openAddModal"
+        class="self-start sm:self-auto px-4 py-2.5 bg-gradient-to-r from-brand to-brand-light hover:from-brand-dark hover:to-brand text-slate-950 font-extrabold rounded-lg shadow-lg hover:shadow-brand/20 transition-all flex items-center gap-2"
+      >
+        <i class="fas fa-file-signature"></i>
+        <span>Registrar Cierre / Venta</span>
+      </button>
+    </div>
+
+    <!-- Spinner / Vacío / Tabla -->
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-3">
+      <span class="animate-spin border-4 border-brand border-t-transparent rounded-full w-12 h-12"></span>
+      <p class="text-slate-500 font-semibold">Cargando histórico de ventas...</p>
+    </div>
+
+    <div v-else-if="ventas.length === 0" class="glass-panel p-16 border-slate-800 flex flex-col items-center text-center">
+      <div class="w-16 h-16 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 text-2xl mb-4">
+        <i class="fas fa-receipt"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-300">No hay ventas registradas</h3>
+      <p class="text-sm text-slate-500 max-w-sm mt-1">Aún no se han documentado cierres comerciales. Registra uno nuevo para iniciar.</p>
+    </div>
+
+    <!-- Tabla de Ventas -->
+    <div v-else class="glass-panel overflow-x-auto border-slate-800">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase text-xs font-bold tracking-wider">
+            <th class="p-4 pl-6">Cliente (Prospecto)</th>
+            <th class="p-4">Vehículo</th>
+            <th class="p-4">Monto</th>
+            <th class="p-4">Asesor</th>
+            <th class="p-4">Estado</th>
+            <th class="p-4">Observaciones / Motivo</th>
+            <th class="p-4 pr-6 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/60">
+          <tr v-for="v in ventas" :key="v.id" class="hover:bg-slate-900/40 transition-colors text-sm">
+            <td class="p-4 pl-6 font-bold text-slate-200">
+              {{ v.prospecto ? v.prospecto.nombre : 'Prospecto Eliminado' }}
+            </td>
+            <td class="p-4 text-slate-300">
+              <span v-if="v.vehiculo" class="font-semibold text-slate-300">
+                {{ v.vehiculo.marca }} {{ v.vehiculo.modelo }} ({{ v.vehiculo.anio }})
+              </span>
+              <span v-else class="text-slate-500">N/A</span>
+            </td>
+            <td class="p-4 text-slate-200 font-extrabold">
+              $ {{ formatCurrency(v.monto) }}
+            </td>
+            <td class="p-4 text-slate-400 font-medium">
+              {{ v.vendedor ? v.vendedor.nombre : 'No asignado' }}
+            </td>
+            <td class="p-4">
+              <span
+                :class="[
+                  'px-3 py-1 rounded-full text-xs font-bold capitalize border inline-block',
+                  v.estado === 'efectiva' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+                ]"
+              >
+                {{ v.estado === 'efectiva' ? 'Efectiva' : 'Fallida' }}
+              </span>
+            </td>
+            <td class="p-4 text-slate-400 max-w-xs truncate">
+              {{ v.estado === 'fallida' ? v.motivo_perdida : 'Cierre exitoso' }}
+            </td>
+            <td class="p-4 pr-6 text-right space-x-2">
+              <!-- Botón Eliminar -->
+              <button
+                @click="handleDelete(v.id)"
+                class="p-2 bg-slate-900 border border-slate-800 hover:border-red-500/40 text-slate-400 hover:text-red-400 rounded-lg transition-all"
+              >
+                <i class="fas fa-trash-alt text-xs"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal Registrar Cierre/Venta -->
+    <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
+      <div class="w-full max-w-lg glass-panel p-6 border-slate-800 space-y-6">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-extrabold text-slate-200">Registrar Venta / Cierre</h3>
+          <button @click="closeFormModal" class="text-slate-400 hover:text-slate-200">
+            <i class="fas fa-times text-lg"></i>
+          </button>
+        </div>
+
+        <form @submit.prevent="saveVenta" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Seleccionar Prospecto</label>
+            <select
+              v-model="form.prospecto_id"
+              @change="onProspectoSelect"
+              required
+              class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand"
+            >
+              <option value="" disabled>Selecciona el cliente...</option>
+              <option v-for="p in activeProspectos" :key="p.id" :value="p.id">
+                {{ p.nombre }} - Interés: {{ p.vehiculo ? `${p.vehiculo.marca} ${p.vehiculo.modelo}` : 'Auto no asignado' }}
+              </option>
+            </select>
+            <p class="text-xxs text-slate-500 mt-1">Sólo se muestran prospectos activos en etapa de venta (previos al cierre).</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Vehículo Asignado</label>
+              <input type="text" readonly :value="selectedVehiculoName" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-500 text-sm focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Monto de Venta ($)</label>
+              <input v-model="form.monto" type="number" step="0.01" required class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Asesor Comercial</label>
+              <input type="text" readonly :value="currentUser.nombre" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-500 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Resultado de Venta</label>
+              <select v-model="form.estado" class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand">
+                <option value="efectiva">Venta Efectiva</option>
+                <option value="fallida">Venta Fallida</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Motivo de pérdida (solo visible si estado es fallido) -->
+          <div v-if="form.estado === 'fallida'">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Motivo de Pérdida</label>
+            <textarea
+              v-model="form.motivo_perdida"
+              required
+              rows="3"
+              placeholder="Explica por qué no se concretó la venta (ej. presupuesto, competidor, etc.)"
+              class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-brand"
+            ></textarea>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+            <button type="button" @click="closeFormModal" class="px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-sm font-semibold">
+              Cancelar
+            </button>
+            <button type="submit" class="px-4 py-2 bg-brand hover:bg-brand-light text-slate-950 rounded-lg text-sm font-extrabold shadow">
+              Registrar Cierre
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, computed, onMounted } from 'vue';
+import { useAuthStore } from '../stores/auth';
+import { ventaService } from '../services/ventaService';
+import { prospectoService } from '../services/prospectoService';
+import { useNotification } from '../composables/useNotification';
+
+export default {
+  setup() {
+    const authStore = ref(useAuthStore());
+    const notification = useNotification();
+
+    const ventas = ref([]);
+    const prospectos = ref([]);
+    const loading = ref(false);
+
+    // Modal
+    const showFormModal = ref(false);
+    const form = ref({
+      prospecto_id: '',
+      vehiculo_id: '',
+      vendedor_id: '',
+      monto: '',
+      estado: 'efectiva',
+      motivo_perdida: '',
+    });
+
+    const currentUser = computed(() => authStore.value.user);
+
+    // Filtrar prospectos activos (no cerrados)
+    const activeProspectos = computed(() => {
+      return prospectos.value.filter((p) => p.etapa !== 'cierre');
+    });
+
+    const selectedProspectoObj = computed(() => {
+      return prospectos.value.find((p) => p.id === form.value.prospecto_id);
+    });
+
+    const selectedVehiculoName = computed(() => {
+      const p = selectedProspectoObj.value;
+      return p && p.vehiculo ? `${p.vehiculo.marca} ${p.vehiculo.modelo} (${p.vehiculo.anio})` : 'No asignado';
+    });
+
+    const loadVentas = async () => {
+      loading.value = true;
+      try {
+        ventas.value = await ventaService.getVentas();
+      } catch (err) {
+        notification.showError(err);
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const loadProspectos = async () => {
+      try {
+        prospectos.value = await prospectoService.getProspectos();
+      } catch (err) {
+        notification.showError(err);
+      }
+    };
+
+    const formatCurrency = (value) => {
+      return parseFloat(value).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    };
+
+    const openAddModal = () => {
+      form.value = {
+        prospecto_id: '',
+        vehiculo_id: '',
+        vendedor_id: currentUser.value.id,
+        monto: '',
+        estado: 'efectiva',
+        motivo_perdida: '',
+      };
+      showFormModal.value = true;
+    };
+
+    const closeFormModal = () => {
+      showFormModal.value = false;
+    };
+
+    const onProspectoSelect = () => {
+      const p = selectedProspectoObj.value;
+      if (p) {
+        form.value.vehiculo_id = p.vehiculo_id;
+        form.value.monto = p.vehiculo ? p.vehiculo.price || p.vehiculo.precio : '';
+      }
+    };
+
+    const saveVenta = async () => {
+      try {
+        await ventaService.createVenta(form.value);
+        notification.showSuccess('Cierre registrado exitosamente.');
+        showFormModal.value = false;
+        loadVentas();
+        loadProspectos(); // Recargar prospectos activos
+      } catch (err) {
+        notification.showError(err);
+      }
+    };
+
+    const handleDelete = async (id) => {
+      if (confirm('¿Estás seguro de eliminar este registro de venta? El stock del vehículo se devolverá si la venta era efectiva.')) {
+        try {
+          await ventaService.deleteVenta(id);
+          notification.showSuccess('Registro de venta eliminado.');
+          loadVentas();
+          loadProspectos();
+        } catch (err) {
+          notification.showError(err);
+        }
+      }
+    };
+
+    onMounted(() => {
+      loadVentas();
+      loadProspectos();
+    });
+
+    return {
+      ventas,
+      prospectos,
+      activeProspectos,
+      loading,
+      formatCurrency,
+      currentUser,
+      
+      // Form Modal
+      showFormModal,
+      form,
+      openAddModal,
+      closeFormModal,
+      onProspectoSelect,
+      selectedVehiculoName,
+      saveVenta,
+      handleDelete,
+    };
+  },
+};
+</script>

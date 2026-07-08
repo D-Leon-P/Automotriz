@@ -1,0 +1,187 @@
+version: '3.8'
+
+services:
+  # 1. Base de datos MySQL compartida
+  db:
+    image: mysql:8.0
+    container_name: automotriz-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: automotriz_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: automotriz_user
+      MYSQL_PASSWORD: automotriz_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks:
+      - automotriz-network
+
+  # 2. API Gateway & Reverse Proxy (NGINX)
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: automotriz-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - prospects-service
+      - sales-service
+      - insurance-service
+      - dashboard-service
+    networks:
+      - automotriz-network
+
+  # 3. Microservicio de Prospectos
+  prospects-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.laravel
+    container_name: prospects-service
+    restart: unless-stopped
+    volumes:
+      - ./backend/prospects-service:/var/www/html
+    environment:
+      - APP_NAME=ProspectsService
+      - APP_ENV=local
+      - APP_KEY=base64:zZ6l2W6xKq51yHq0GzJ3K9e3N2Q4p5Z6l2W6xKq51yH=
+      - APP_DEBUG=true
+      - APP_URL=http://prospects-service
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=automotriz_db
+      - DB_USERNAME=automotriz_user
+      - DB_PASSWORD=automotriz_pass
+      - JWT_SECRET=3x4mp1e_jwt_s3cr3t_k3y_prospects_service_123456
+    depends_on:
+      - db
+    networks:
+      - automotriz-network
+
+  # 4. Microservicio de Ventas
+  sales-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.laravel
+    container_name: sales-service
+    restart: unless-stopped
+    volumes:
+      - ./backend/sales-service:/var/www/html
+    environment:
+      - APP_NAME=SalesService
+      - APP_ENV=local
+      - APP_KEY=base64:qW6l2W6xKq51yHq0GzJ3K9e3N2Q4p5Z6l2W6xKq51yH=
+      - APP_DEBUG=true
+      - APP_URL=http://sales-service
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=automotriz_db
+      - DB_USERNAME=automotriz_user
+      - DB_PASSWORD=automotriz_pass
+      - JWT_SECRET=3x4mp1e_jwt_s3cr3t_k3y_prospects_service_123456 # Shared secret for JWT verification
+    depends_on:
+      - db
+    networks:
+      - automotriz-network
+
+  # 5. Microservicio de Seguros
+  insurance-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.laravel
+    container_name: insurance-service
+    restart: unless-stopped
+    volumes:
+      - ./backend/insurance-service:/var/www/html
+    environment:
+      - APP_NAME=InsuranceService
+      - APP_ENV=local
+      - APP_KEY=base64:eE6l2W6xKq51yHq0GzJ3K9e3N2Q4p5Z6l2W6xKq51yH=
+      - APP_DEBUG=true
+      - APP_URL=http://insurance-service
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=automotriz_db
+      - DB_USERNAME=automotriz_user
+      - DB_PASSWORD=automotriz_pass
+      - JWT_SECRET=3x4mp1e_jwt_s3cr3t_k3y_prospects_service_123456
+    depends_on:
+      - db
+    networks:
+      - automotriz-network
+
+  # 6. Microservicio de Dashboard
+  dashboard-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.laravel
+    container_name: dashboard-service
+    restart: unless-stopped
+    volumes:
+      - ./backend/dashboard-service:/var/www/html
+    environment:
+      - APP_NAME=DashboardService
+      - APP_ENV=local
+      - APP_KEY=base64:rR6l2W6xKq51yHq0GzJ3K9e3N2Q4p5Z6l2W6xKq51yH=
+      - APP_DEBUG=true
+      - APP_URL=http://dashboard-service
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=automotriz_db
+      - DB_USERNAME=automotriz_user
+      - DB_PASSWORD=automotriz_pass
+      - JWT_SECRET=3x4mp1e_jwt_s3cr3t_k3y_prospects_service_123456
+    depends_on:
+      - db
+    networks:
+      - automotriz-network
+
+  # 7. Frontend Vue.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: automotriz-frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - automotriz-network
+
+  # 8. Automatización n8n
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: automotriz-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=n8n
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/Lima
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - automotriz-network
+
+networks:
+  automotriz-network:
+    driver: bridge
+
+volumes:
+  db_data:
+  n8n_data:

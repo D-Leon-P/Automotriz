@@ -1,0 +1,35 @@
+# Directorios de Dependencias
+node_modules/
+vendor/
+
+# Archivos de Entorno y Secretos
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# Datos Locales de Contenedores Docker (Evitar subir base de datos e históricos de n8n)
+db_data/
+n8n_data/
+
+# Sistema Operativo e IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# Logs y Archivos de Compilación
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.server_generated/
+/scratch/
+*extracted*.md
+*EXTRACTED*.md

@@ -1,0 +1,200 @@
+{
+  "name": "CRM Automotriz - Seguimiento y Alertas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "8f8e2850-8c29-4d2c-9a4f-561b2e8a1f81",
+      "name": "Cron Diario (8:00 AM)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.id, p.nombre, p.email, p.telefono, p.etapa, p.updated_at, v.nombre as vendedor_nombre, v.email as vendedor_email FROM prospectos p JOIN vendedores v ON p.vendedor_id = v.id WHERE p.etapa != 'cierre' AND p.updated_at < DATE_SUB(NOW(), INTERVAL 5 DAY);"
+      },
+      "id": "dbf2c8a1-7c2a-4df3-8d3c-9a2c1f8e3d0d",
+      "name": "Consultar Prospectos Inactivos (>5 días)",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "mysql-conn-id",
+          "name": "automotriz_db"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "bf8c2d91-1a3b-4c5e-8d7e-9f0a2b1c3d4e",
+      "name": "Inactivos Encontrados?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://prospects-service/api/alertas/inactividad",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer internal_n8n_system_token"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prospectos",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "df2c8e1a-2b3c-4d5e-8f7a-9a0b1c2d3e4f",
+      "name": "Disparar Alerta a Laravel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        750,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "path": "prospectos",
+        "options": {}
+      },
+      "id": "e2c8d1a3-b4c5-4d5e-8f7a-9a0b1c2d3e4f",
+      "name": "Webhook: Evento Prospecto",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        500
+      ],
+      "webhookId": "9b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f"
+    },
+    {
+      "parameters": {
+        "path": "ventas",
+        "options": {}
+      },
+      "id": "f3c9d2a4-b5c6-4d5e-8f7a-9a0b1c2d3e4f",
+      "name": "Webhook: Evento Venta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        650
+      ],
+      "webhookId": "0b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f"
+    },
+    {
+      "parameters": {
+        "operation": "log",
+        "message": "=[n8n LOG] Evento recibido: {{ $json.action }} para {{ $json.action === 'created' ? 'registro' : 'actualización' }} en {{ $json.timestamp }}"
+      },
+      "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "Registrar Log de Eventos",
+      "type": "n8n-nodes-base.debug",
+      "typeVersion": 1,
+      "position": [
+        400,
+        580
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Diario (8:00 AM)": {
+      "main": [
+        [
+          {
+            "node": "Consultar Prospectos Inactivos (>5 días)",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Prospectos Inactivos (>5 días)": {
+      "main": [
+        [
+          {
+            "node": "Inactivos Encontrados?",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inactivos Encontrados?": {
+      "main": [
+        [
+          {
+            "node": "Disparar Alerta a Laravel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Evento Prospecto": {
+      "main": [
+        [
+          {
+            "node": "Registrar Log de Eventos",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Evento Venta": {
+      "main": [
+        [
+          {
+            "node": "Registrar Log de Eventos",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  }
+}
