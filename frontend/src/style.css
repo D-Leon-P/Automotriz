@@ -27,8 +27,17 @@
 
 /* Glassmorphism utility */
 .glass-panel {
-  @apply bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-xl shadow-xl;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 .glass-panel-hover {
-  @apply hover:border-brand-DEFAULT/30 hover:shadow-brand-DEFAULT/5 transition-all duration-300;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-panel-hover:hover {
+  border-color: rgba(217, 119, 6, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(217, 119, 6, 0.05), 0 4px 6px -2px rgba(217, 119, 6, 0.05);
 }
