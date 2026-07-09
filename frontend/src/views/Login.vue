@@ -1,7 +1,7 @@
 <template>
   <div 
     class="min-h-screen w-full flex items-center justify-center bg-slate-950 px-4 relative overflow-hidden font-sans text-slate-100"
-    style="background-image: url('/geometric_bg.png'); background-size: cover; background-position: center;"
+    style="background-image: url('/geometric_bg.webp'); background-size: cover; background-position: center;"
   >
     <!-- Background overlay for contrast and blur effect -->
     <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm pointer-events-none"></div>
@@ -11,9 +11,7 @@
       <main class="glass-panel p-6 sm:p-8 rounded-2xl flex flex-col items-center">
         <!-- Logo & Header -->
         <div class="mb-6 sm:mb-8 flex flex-col items-center text-center">
-          <div class="w-16 h-16 mb-4 rounded-xl flex items-center justify-center p-2 bg-white/5 border border-white/10 shadow-[0_0_20px_rgba(245,158,11,0.15)] text-amber-500 text-3xl">
-            <i class="fas fa-car-side"></i>
-          </div>
+          <img src="/logo.webp" alt="CRM Automotriz" class="w-24 h-24 mb-4 object-contain filter drop-shadow-[0_0_15px_rgba(245,158,11,0.2)]" />
           <h1 class="text-3xl font-extrabold tracking-tight text-white">CRM Automotriz</h1>
           <p class="text-sm text-slate-400 mt-2">Acceda a su entorno de trabajo premium</p>
         </div>

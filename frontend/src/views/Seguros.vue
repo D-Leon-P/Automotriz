@@ -1,14 +1,14 @@
 <template>
-  <div class="p-8 max-w-7xl mx-auto space-y-8">
+  <div class="p-4 sm:p-8 max-w-7xl mx-auto space-y-8 text-slate-100 font-sans">
     <!-- Encabezado -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-extrabold tracking-tight text-slate-100">Seguros Vehiculares</h2>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white font-serif">Seguros Vehiculares</h2>
         <p class="text-slate-400 mt-1">Asocia pólizas y gestiona los seguros complementarios de cada venta.</p>
       </div>
       <button
         @click="openAddModal"
-        class="self-start sm:self-auto px-4 py-2.5 bg-gradient-to-r from-brand to-brand-light hover:from-brand-dark hover:to-brand text-slate-950 font-extrabold rounded-lg shadow-lg hover:shadow-brand/20 transition-all flex items-center gap-2"
+        class="self-start sm:self-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold rounded-xl shadow-lg hover:shadow-amber-500/20 transition-all duration-200 flex items-center gap-2"
       >
         <i class="fas fa-shield-alt"></i>
         <span>Vincular Póliza</span>
@@ -17,23 +17,23 @@
 
     <!-- Spinner / Vacío / Tabla -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-3">
-      <span class="animate-spin border-4 border-brand border-t-transparent rounded-full w-12 h-12"></span>
+      <span class="animate-spin border-4 border-amber-500 border-t-transparent rounded-full w-12 h-12"></span>
       <p class="text-slate-500 font-semibold">Cargando pólizas de seguro...</p>
     </div>
 
-    <div v-else-if="seguros.length === 0" class="glass-panel p-16 border-slate-800 flex flex-col items-center text-center">
-      <div class="w-16 h-16 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 text-2xl mb-4">
+    <div v-else-if="seguros.length === 0" class="glass-panel p-16 flex flex-col items-center text-center rounded-2xl">
+      <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-4">
         <i class="fas fa-file-shield"></i>
       </div>
-      <h3 class="text-lg font-bold text-slate-300">No hay seguros vinculados</h3>
+      <h3 class="text-lg font-bold text-slate-300 font-serif">No hay seguros vinculados</h3>
       <p class="text-sm text-slate-500 max-w-sm mt-1">Vincula tu primera póliza de seguro vehicular a una venta concretada para comenzar el seguimiento.</p>
     </div>
 
     <!-- Tabla de Seguros -->
-    <div v-else class="glass-panel overflow-x-auto border-slate-800">
+    <div v-else class="glass-panel overflow-x-auto rounded-2xl">
       <table class="w-full text-left border-collapse">
         <thead>
-          <tr class="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase text-xs font-bold tracking-wider">
+          <tr class="bg-slate-950/40 border-b border-white/5 text-slate-400 uppercase text-xs font-bold tracking-wider">
             <th class="p-4 pl-6">Venta Asociada (Cliente)</th>
             <th class="p-4">Tipo de Seguro</th>
             <th class="p-4">Prima Esperada</th>
@@ -42,8 +42,8 @@
             <th class="p-4 pr-6 text-right">Acciones</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-800/60">
-          <tr v-for="s in seguros" :key="s.id" class="hover:bg-slate-900/40 transition-colors text-sm">
+        <tbody class="divide-y divide-white/5">
+          <tr v-for="s in seguros" :key="s.id" class="hover:bg-slate-900/20 transition-colors duration-200 text-sm">
             <td class="p-4 pl-6">
               <div v-if="s.venta" class="flex flex-col">
                 <span class="font-bold text-slate-200">
@@ -74,7 +74,7 @@
               <!-- Botón Editar -->
               <button
                 @click="openEditModal(s)"
-                class="p-2 bg-slate-900 border border-slate-800 hover:border-brand/40 text-slate-400 hover:text-brand-light rounded-lg transition-all"
+                class="p-2 bg-slate-900/20 border border-white/5 hover:border-amber-500/30 text-slate-400 hover:text-amber-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-edit text-xs"></i>
               </button>
@@ -82,7 +82,7 @@
               <!-- Botón Eliminar -->
               <button
                 @click="handleDelete(s.id)"
-                class="p-2 bg-slate-900 border border-slate-800 hover:border-red-500/40 text-slate-400 hover:text-red-400 rounded-lg transition-all"
+                class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-trash-alt text-xs"></i>
               </button>
@@ -94,9 +94,9 @@
 
     <!-- Modal Vincular/Editar Seguro -->
     <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
-      <div class="w-full max-w-lg glass-panel p-6 border-slate-800 space-y-6">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xl font-extrabold text-slate-200">
+      <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
+        <div class="flex justify-between items-center pb-4 border-b border-white/5">
+          <h3 class="text-xl font-bold text-white font-serif">
             {{ isEditing ? 'Editar Póliza de Seguro' : 'Vincular Póliza de Seguro' }}
           </h3>
           <button @click="closeFormModal" class="text-slate-400 hover:text-slate-200">
@@ -106,12 +106,12 @@
 
         <form @submit.prevent="saveSeguro" class="space-y-4">
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Venta Asociada</label>
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Seleccionar Venta</label>
             <select
               v-model="form.venta_id"
               :disabled="isEditing"
               required
-              class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand disabled:opacity-50"
+              class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300 disabled:opacity-50"
             >
               <option value="" disabled>Selecciona la venta...</option>
               <option v-for="v in ventasEfectivas" :key="v.id" :value="v.id">
@@ -121,34 +121,34 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Tipo de Seguro</label>
-            <input v-model="form.tipo_seguro" type="text" required placeholder="ej. Todo Riesgo Premium, Responsabilidad Civil" class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-brand" />
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Tipo de Seguro</label>
+            <input v-model="form.tipo_seguro" type="text" required placeholder="ej. Todo Riesgo Premium, Responsabilidad Civil" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Prima Esperada ($)</label>
-              <input v-model="form.prima_esperada" type="number" step="0.01" required class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Prima Esperada ($)</label>
+              <input v-model="form.prima_esperada" type="number" step="0.01" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Prima Real ($)</label>
-              <input v-model="form.prima_real" type="number" step="0.01" :required="form.estado === 'vendido'" class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Prima Real ($)</label>
+              <input v-model="form.prima_real" type="number" step="0.01" :required="form.estado === 'vendido'" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Estado de Póliza</label>
-            <select v-model="form.estado" class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand">
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Estado de Póliza</label>
+            <select v-model="form.estado" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300">
               <option value="prospectado">Prospectado</option>
               <option value="vendido">Vendido</option>
             </select>
           </div>
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
-            <button type="button" @click="closeFormModal" class="px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-sm font-semibold">
+          <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
+            <button type="button" @click="closeFormModal" class="px-4 py-2 bg-slate-900/20 border border-white/5 hover:border-slate-800 text-slate-400 hover:text-slate-200 rounded-xl text-sm font-semibold transition-all">
               Cancelar
             </button>
-            <button type="submit" class="px-4 py-2 bg-brand hover:bg-brand-light text-slate-950 rounded-lg text-sm font-extrabold shadow">
+            <button type="submit" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 rounded-xl text-sm font-bold shadow-lg hover:shadow-amber-500/20 transition-all duration-200">
               {{ isEditing ? 'Guardar Cambios' : 'Vincular Seguro' }}
             </button>
           </div>

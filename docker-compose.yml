@@ -6,6 +6,7 @@ services:
     image: mysql:8.0
     container_name: automotriz-db
     restart: unless-stopped
+    command: --skip-name-resolve
     environment:
       MYSQL_DATABASE: automotriz_db
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -42,10 +43,13 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.laravel
+      args:
+        - SERVICE_PATH=prospects-service
     container_name: prospects-service
     restart: unless-stopped
     volumes:
       - ./backend/prospects-service:/var/www/html
+      - /var/www/html/vendor
     environment:
       - APP_NAME=ProspectsService
       - APP_ENV=local
@@ -63,16 +67,25 @@ services:
       - db
     networks:
       - automotriz-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/warmup.php"]
+      interval: 30s
+      timeout: 60s
+      retries: 3
+      start_period: 60s
 
   # 4. Microservicio de Ventas
   sales-service:
     build:
       context: ./backend
       dockerfile: Dockerfile.laravel
+      args:
+        - SERVICE_PATH=sales-service
     container_name: sales-service
     restart: unless-stopped
     volumes:
       - ./backend/sales-service:/var/www/html
+      - /var/www/html/vendor
     environment:
       - APP_NAME=SalesService
       - APP_ENV=local
@@ -90,16 +103,25 @@ services:
       - db
     networks:
       - automotriz-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/warmup.php"]
+      interval: 30s
+      timeout: 60s
+      retries: 3
+      start_period: 60s
 
   # 5. Microservicio de Seguros
   insurance-service:
     build:
       context: ./backend
       dockerfile: Dockerfile.laravel
+      args:
+        - SERVICE_PATH=insurance-service
     container_name: insurance-service
     restart: unless-stopped
     volumes:
       - ./backend/insurance-service:/var/www/html
+      - /var/www/html/vendor
     environment:
       - APP_NAME=InsuranceService
       - APP_ENV=local
@@ -117,16 +139,25 @@ services:
       - db
     networks:
       - automotriz-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/warmup.php"]
+      interval: 30s
+      timeout: 60s
+      retries: 3
+      start_period: 60s
 
   # 6. Microservicio de Dashboard
   dashboard-service:
     build:
       context: ./backend
       dockerfile: Dockerfile.laravel
+      args:
+        - SERVICE_PATH=dashboard-service
     container_name: dashboard-service
     restart: unless-stopped
     volumes:
       - ./backend/dashboard-service:/var/www/html
+      - /var/www/html/vendor
     environment:
       - APP_NAME=DashboardService
       - APP_ENV=local
@@ -144,6 +175,12 @@ services:
       - db
     networks:
       - automotriz-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/warmup.php"]
+      interval: 30s
+      timeout: 60s
+      retries: 3
+      start_period: 60s
 
   # 7. Frontend Vue.js
   frontend:

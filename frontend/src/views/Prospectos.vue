@@ -1,14 +1,14 @@
 <template>
-  <div class="p-8 max-w-7xl mx-auto space-y-8">
+  <div class="p-4 sm:p-8 max-w-7xl mx-auto space-y-8 text-slate-100 font-sans">
     <!-- Encabezado -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-extrabold tracking-tight text-slate-100">Gestión de Prospectos</h2>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white font-serif">Gestión de Prospectos</h2>
         <p class="text-slate-400 mt-1">Registra y califica potenciales clientes a través de tu embudo comercial.</p>
       </div>
       <button
         @click="openAddModal"
-        class="self-start sm:self-auto px-4 py-2.5 bg-gradient-to-r from-brand to-brand-light hover:from-brand-dark hover:to-brand text-slate-950 font-extrabold rounded-lg shadow-lg hover:shadow-brand/20 transition-all flex items-center gap-2"
+        class="self-start sm:self-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold rounded-xl shadow-lg hover:shadow-amber-500/20 transition-all duration-200 flex items-center gap-2"
       >
         <i class="fas fa-user-plus"></i>
         <span>Registrar Prospecto</span>
@@ -22,10 +22,10 @@
         :key="filter.value"
         @click="activeFilter = filter.value"
         :class="[
-          'px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all',
+          'px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all duration-200',
           activeFilter === filter.value
-            ? 'bg-brand/10 border-brand text-brand-light font-black shadow'
-            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+            ? 'bg-amber-500/10 border-amber-500 text-amber-400 font-black shadow'
+            : 'bg-slate-900/20 border-white/5 text-slate-400 hover:border-white/10 hover:text-slate-200'
         ]"
       >
         {{ filter.label }}
@@ -34,23 +34,23 @@
 
     <!-- Spinner / Vacío / Tabla -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-3">
-      <span class="animate-spin border-4 border-brand border-t-transparent rounded-full w-12 h-12"></span>
+      <span class="animate-spin border-4 border-amber-500 border-t-transparent rounded-full w-12 h-12"></span>
       <p class="text-slate-500 font-semibold">Cargando prospectos...</p>
     </div>
 
-    <div v-else-if="filteredProspectos.length === 0" class="glass-panel p-16 border-slate-800 flex flex-col items-center text-center">
-      <div class="w-16 h-16 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 text-2xl mb-4">
+    <div v-else-if="filteredProspectos.length === 0" class="glass-panel p-16 border-slate-900/40 flex flex-col items-center text-center rounded-2xl">
+      <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-4">
         <i class="fas fa-users-slash"></i>
       </div>
-      <h3 class="text-lg font-bold text-slate-300">No hay prospectos registrados</h3>
+      <h3 class="text-lg font-bold text-slate-300 font-serif">No hay prospectos registrados</h3>
       <p class="text-sm text-slate-500 max-w-sm mt-1">Registra tu primer prospecto o selecciona otra etapa de filtrado para ver la lista.</p>
     </div>
 
     <!-- Tabla de Prospectos -->
-    <div v-else class="glass-panel overflow-x-auto border-slate-800">
+    <div v-else class="glass-panel overflow-x-auto rounded-2xl">
       <table class="w-full text-left border-collapse">
         <thead>
-          <tr class="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase text-xs font-bold tracking-wider">
+          <tr class="bg-slate-950/40 border-b border-white/5 text-slate-400 uppercase text-xs font-bold tracking-wider">
             <th class="p-4 pl-6">Cliente</th>
             <th class="p-4">Contacto</th>
             <th class="p-4">Vehículo de Interés</th>
@@ -59,8 +59,8 @@
             <th class="p-4 pr-6 text-right">Acciones</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-800/60">
-          <tr v-for="p in filteredProspectos" :key="p.id" class="hover:bg-slate-900/40 transition-colors text-sm">
+        <tbody class="divide-y divide-white/5">
+          <tr v-for="p in filteredProspectos" :key="p.id" class="hover:bg-slate-900/20 transition-colors duration-200 text-sm">
             <td class="p-4 pl-6 font-bold text-slate-200">{{ p.nombre }}</td>
             <td class="p-4 text-slate-300">
               <div class="flex flex-col">
@@ -96,15 +96,16 @@
                 v-if="p.etapa !== 'cierre'"
                 @click="openAdvanceModal(p)"
                 v-title="'Avanzar/Editar etapa'"
-                class="p-2 bg-slate-900 border border-slate-800 hover:border-brand/40 text-slate-400 hover:text-brand-light rounded-lg transition-all"
+                class="p-2 bg-slate-900/20 border border-white/5 hover:border-amber-500/30 text-slate-400 hover:text-amber-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-step-forward text-xs"></i>
               </button>
               
-              <!-- Botón Editar -->
+              <!-- Botón Editar Ficha -->
               <button
                 @click="openEditModal(p)"
-                class="p-2 bg-slate-900 border border-slate-800 hover:border-brand/40 text-slate-400 hover:text-brand-light rounded-lg transition-all"
+                v-title="'Editar datos'"
+                class="p-2 bg-slate-900/20 border border-white/5 hover:border-amber-500/30 text-slate-400 hover:text-amber-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-edit text-xs"></i>
               </button>
@@ -112,7 +113,7 @@
               <!-- Botón Eliminar -->
               <button
                 @click="handleDelete(p.id)"
-                class="p-2 bg-slate-900 border border-slate-800 hover:border-red-500/40 text-slate-400 hover:text-red-400 rounded-lg transition-all"
+                class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-trash-alt text-xs"></i>
               </button>
@@ -124,9 +125,9 @@
 
     <!-- Modal Registrar/Editar Prospecto -->
     <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
-      <div class="w-full max-w-lg glass-panel p-6 border-slate-800 space-y-6">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xl font-extrabold text-slate-200">
+      <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
+        <div class="flex justify-between items-center pb-4 border-b border-white/5">
+          <h3 class="text-xl font-bold text-white font-serif">
             {{ isEditing ? 'Editar Prospecto' : 'Registrar Prospecto' }}
           </h3>
           <button @click="closeFormModal" class="text-slate-400 hover:text-slate-200">
@@ -137,23 +138,23 @@
         <form @submit.prevent="saveProspecto" class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Nombre Completo</label>
-              <input v-model="form.nombre" type="text" required class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-brand" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nombre Completo</label>
+              <input v-model="form.nombre" type="text" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Email</label>
-              <input v-model="form.email" type="email" required class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-brand" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Email</label>
+              <input v-model="form.email" type="email" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Teléfono</label>
-              <input v-model="form.telefono" type="text" class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-brand" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Teléfono</label>
+              <input v-model="form.telefono" type="text" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Vehículo de Interés</label>
-              <select v-model="form.vehiculo_id" required class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand">
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Vehículo de Interés</label>
+              <select v-model="form.vehiculo_id" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300">
                 <option value="" disabled>Selecciona un auto</option>
                 <option v-for="v in vehiculos" :key="v.id" :value="v.id">
                   {{ v.marca }} {{ v.modelo }} ({{ v.anio }}) - ${{ v.precio }}
@@ -164,13 +165,12 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Asesor Comercial</label>
-              <!-- En un entorno real esto puede cargarse dinámicamente. De momento autocompletamos con el vendedor autenticado -->
-              <input type="text" readonly :value="currentUser.nombre" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-500 text-sm focus:outline-none" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Asesor Comercial</label>
+              <input type="text" readonly :value="currentUser.nombre" class="w-full p-2.5 bg-slate-950/40 border border-white/5 rounded-xl text-slate-500 text-sm focus:outline-none" />
             </div>
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Etapa Inicial</label>
-              <select v-model="form.etapa" class="w-full p-2.5 bg-slate-850 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-brand">
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Etapa Inicial</label>
+              <select v-model="form.etapa" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300">
                 <option value="prospeccion">Prospección Inicial</option>
                 <option value="calificacion">Calificación</option>
                 <option value="negociacion">Negociación</option>
@@ -179,11 +179,11 @@
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
-            <button type="button" @click="closeFormModal" class="px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 rounded-lg text-sm font-semibold">
+          <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
+            <button type="button" @click="closeFormModal" class="px-4 py-2 bg-slate-900/20 border border-white/5 hover:border-slate-800 text-slate-400 hover:text-slate-200 rounded-xl text-sm font-semibold transition-all">
               Cancelar
             </button>
-            <button type="submit" class="px-4 py-2 bg-brand hover:bg-brand-light text-slate-950 rounded-lg text-sm font-extrabold shadow">
+            <button type="submit" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 rounded-xl text-sm font-bold shadow-lg hover:shadow-amber-500/20 transition-all duration-200">
               {{ isEditing ? 'Guardar Cambios' : 'Registrar' }}
             </button>
           </div>
@@ -193,9 +193,9 @@
 
     <!-- Modal Avanzar Etapa -->
     <div v-if="showAdvanceModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
-      <div class="w-full max-w-sm glass-panel p-6 border-slate-800 space-y-6">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xl font-extrabold text-slate-200">Actualizar Etapa</h3>
+      <div class="w-full max-w-sm glass-panel p-6 border-slate-900/40 rounded-2xl space-y-6">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-900">
+          <h3 class="text-xl font-bold text-white font-serif">Actualizar Etapa</h3>
           <button @click="closeAdvanceModal" class="text-slate-400 hover:text-slate-200">
             <i class="fas fa-times text-lg"></i>
           </button>
@@ -210,16 +210,15 @@
                 v-for="stage in ['prospeccion', 'calificacion', 'negociacion']"
                 :key="stage"
                 @click="updateStage(stage)"
-                class="w-full p-3 bg-slate-850 hover:bg-slate-800 border border-slate-850 hover:border-brand/40 text-left rounded-lg text-sm font-semibold text-slate-300 transition-all flex items-center justify-between"
+                class="w-full p-3 bg-slate-900/40 hover:bg-slate-900 border border-slate-800/80 hover:border-amber-500/30 text-left rounded-xl text-sm font-semibold text-slate-300 transition-all duration-200 flex items-center justify-between"
               >
                 <span>{{ formatEtapa(stage) }}</span>
                 <i class="fas fa-chevron-right text-slate-500"></i>
               </button>
 
-              <!-- El Cierre (Venta Efectiva/Venta Fallida) redirige a la pestaña de ventas, ya que debe registrarse formalmente -->
               <router-link
                 to="/ventas"
-                class="w-full p-3 bg-slate-850 hover:bg-slate-800 border border-slate-850 hover:border-green-500/30 text-left rounded-lg text-sm font-semibold text-green-400 transition-all flex items-center justify-between"
+                class="w-full p-3 bg-slate-900/40 hover:bg-slate-900 border border-slate-800/80 hover:border-emerald-500/30 text-left rounded-xl text-sm font-semibold text-emerald-400 transition-all duration-200 flex items-center justify-between"
               >
                 <span>Cerrar Venta (Efectiva / Fallida)</span>
                 <i class="fas fa-file-signature"></i>

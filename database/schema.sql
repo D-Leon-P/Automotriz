@@ -4,6 +4,7 @@
 
 CREATE DATABASE IF NOT EXISTS automotriz_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE automotriz_db;
+SET NAMES utf8mb4;
 
 -- 1. Tabla de Vendedores
 CREATE TABLE IF NOT EXISTS vendedores (
