@@ -16,7 +16,7 @@ class UpdateVentaRequest extends FormRequest
         return [
             'prospecto_id' => 'sometimes|required|integer|exists:prospectos,id',
             'vehiculo_id' => 'sometimes|required|integer|exists:vehiculos,id',
-            'vendedor_id' => 'sometimes|required|integer|exists:vendedores,id',
+            'empleado_id' => 'sometimes|required|integer|exists:empleados,id',
             'monto' => 'sometimes|required|numeric|min:0',
             'estado' => 'sometimes|required|string|in:efectiva,fallida',
             'motivo_perdida' => 'required_if:estado,fallida|nullable|string|max:255',

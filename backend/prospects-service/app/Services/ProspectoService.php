@@ -15,14 +15,14 @@ class ProspectoService
         $this->prospectoRepository = $prospectoRepository;
     }
 
-    public function getAllProspectos($vendedorId)
+    public function getAllProspectos($empleadoId)
     {
-        return $this->prospectoRepository->allForVendedor($vendedorId);
+        return $this->prospectoRepository->allForVendedor($empleadoId);
     }
 
-    public function getProspectoById($id, $vendedorId)
+    public function getProspectoById($id, $empleadoId)
     {
-        return $this->prospectoRepository->findForVendedor($id, $vendedorId);
+        return $this->prospectoRepository->findForVendedor($id, $empleadoId);
     }
 
     public function createProspecto(array $data)
@@ -35,9 +35,9 @@ class ProspectoService
         return $prospecto;
     }
 
-    public function updateProspecto($id, array $data, $vendedorId)
+    public function updateProspecto($id, array $data, $empleadoId = null)
     {
-        $prospecto = $this->prospectoRepository->update($id, $data, $vendedorId);
+        $prospecto = $this->prospectoRepository->update($id, $data, $empleadoId);
         
         // Disparar evento a n8n
         $this->notifyN8n('updated', $prospecto);
@@ -45,12 +45,12 @@ class ProspectoService
         return $prospecto;
     }
 
-    public function deleteProspecto($id, $vendedorId)
+    public function deleteProspecto($id, $empleadoId = null)
     {
-        $prospecto = $this->prospectoRepository->findForVendedor($id, $vendedorId);
+        $prospecto = $this->prospectoRepository->findForVendedor($id, $empleadoId);
         if ($prospecto) {
             $this->notifyN8n('deleted', $prospecto);
-            return $this->prospectoRepository->delete($id, $vendedorId);
+            return $this->prospectoRepository->delete($id, $empleadoId);
         }
         return false;
     }

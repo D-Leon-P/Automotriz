@@ -19,7 +19,7 @@ class UpdateProspectoRequest extends FormRequest
             'telefono' => 'nullable|string|max:20',
             'vehiculo_id' => 'sometimes|required|integer|exists:vehiculos,id',
             'etapa' => 'sometimes|required|string|in:prospeccion,calificacion,negociacion,cierre',
-            'vendedor_id' => 'sometimes|required|integer|exists:vendedores,id',
+            'empleado_id' => 'sometimes|required|integer|exists:empleados,id',
         ];
     }
 }

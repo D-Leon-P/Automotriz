@@ -16,21 +16,21 @@ class SeguroService
         $this->seguroRepository = $seguroRepository;
     }
 
-    public function getAllSeguros($vendedorId)
+    public function getAllSeguros($empleadoId)
     {
-        return $this->seguroRepository->allForVendedor($vendedorId);
+        return $this->seguroRepository->allForVendedor($empleadoId);
     }
 
-    public function getSeguroById($id, $vendedorId)
+    public function getSeguroById($id, $empleadoId)
     {
-        return $this->seguroRepository->findForVendedor($id, $vendedorId);
+        return $this->seguroRepository->findForVendedor($id, $empleadoId);
     }
 
-    public function createSeguro(array $data, $vendedorId)
+    public function createSeguro(array $data, $empleadoId)
     {
-        // Validar BOLA: Asegurar que la venta pertenece al vendedor autenticado
+        // Validar BOLA: Asegurar que la venta pertenece al empleado (si no es admin)
         $venta = Venta::findOrFail($data['venta_id']);
-        if ($venta->vendedor_id !== $vendedorId) {
+        if ($empleadoId !== null && $venta->empleado_id !== $empleadoId) {
             throw new \Exception("No autorizado para operar con esta venta.");
         }
 
@@ -39,10 +39,10 @@ class SeguroService
         return $seguro;
     }
 
-    public function updateSeguro($id, array $data, $vendedorId)
+    public function updateSeguro($id, array $data, $empleadoId)
     {
-        // Validar BOLA: Asegurar que el seguro original pertenece al vendedor
-        $seguro = $this->seguroRepository->findForVendedor($id, $vendedorId);
+        // Validar BOLA: Asegurar que el seguro original pertenece al empleado
+        $seguro = $this->seguroRepository->findForVendedor($id, $empleadoId);
         if (!$seguro) {
             throw new \Exception("Seguro no encontrado o no autorizado.");
         }
@@ -50,22 +50,22 @@ class SeguroService
         // Si se cambia la venta asociada, validar que la nueva venta también le pertenezca
         if (isset($data['venta_id'])) {
             $venta = Venta::findOrFail($data['venta_id']);
-            if ($venta->vendedor_id !== $vendedorId) {
+            if ($empleadoId !== null && $venta->empleado_id !== $empleadoId) {
                 throw new \Exception("No autorizado para asociar la nueva venta.");
             }
         }
 
-        $updatedSeguro = $this->seguroRepository->update($id, $data, $vendedorId);
+        $updatedSeguro = $this->seguroRepository->update($id, $data, $empleadoId);
         $this->notifyN8n('updated', $updatedSeguro);
         return $updatedSeguro;
     }
 
-    public function deleteSeguro($id, $vendedorId)
+    public function deleteSeguro($id, $empleadoId)
     {
-        $seguro = $this->seguroRepository->findForVendedor($id, $vendedorId);
+        $seguro = $this->seguroRepository->findForVendedor($id, $empleadoId);
         if ($seguro) {
             $this->notifyN8n('deleted', $seguro);
-            return $this->seguroRepository->delete($id, $vendedorId);
+            return $this->seguroRepository->delete($id, $empleadoId);
         }
         return false;
     }

@@ -14,20 +14,24 @@ class VentaController extends Controller
     public function __construct(VentaService $ventaService)
     {
         $this->middleware('auth:api');
+        $this->middleware('permission:ver_ventas_propias,ver_ventas_todas')->only(['index', 'show']);
+        $this->middleware('permission:gestionar_ventas_propias,gestionar_ventas_todas')->only(['store', 'update', 'destroy']);
         $this->ventaService = $ventaService;
     }
 
     public function index()
     {
-        $vendedorId = Auth::id();
-        $ventas = $this->ventaService->getAllVentas($vendedorId);
+        $user = Auth::user();
+        $empleadoId = $user->hasPermission('ver_ventas_todas') ? null : $user->id;
+        $ventas = $this->ventaService->getAllVentas($empleadoId);
         return response()->json($ventas);
     }
 
     public function show($id)
     {
-        $vendedorId = Auth::id();
-        $venta = $this->ventaService->getVentaById($id, $vendedorId);
+        $user = Auth::user();
+        $empleadoId = $user->hasPermission('ver_ventas_todas') ? null : $user->id;
+        $venta = $this->ventaService->getVentaById($id, $empleadoId);
         if (!$venta) {
             return response()->json([
                 'status' => 'error',
@@ -40,13 +44,16 @@ class VentaController extends Controller
     public function store(StoreVentaRequest $request)
     {
         try {
-            $vendedorId = Auth::id();
+            $user = Auth::user();
             $validated = $request->validated();
             
-            // Forzar que el vendedor de la venta sea el vendedor autenticado
-            $validated['vendedor_id'] = $vendedorId;
+            // Si no se especifica empleado_id o no es administrador, forzar el empleado autenticado
+            if (!$user->hasPermission('gestionar_ventas_todas') || !isset($validated['empleado_id'])) {
+                $validated['empleado_id'] = $user->id;
+            }
             
-            $venta = $this->ventaService->createVenta($validated, $vendedorId);
+            $empleadoId = $user->hasPermission('gestionar_ventas_todas') ? null : $user->id;
+            $venta = $this->ventaService->createVenta($validated, $empleadoId);
             
             return response()->json([
                 'status' => 'success',
@@ -64,13 +71,16 @@ class VentaController extends Controller
     public function update(UpdateVentaRequest $request, $id)
     {
         try {
-            $vendedorId = Auth::id();
+            $user = Auth::user();
             $validated = $request->validated();
             
-            // Evitar transferencia fraudulenta
-            unset($validated['vendedor_id']);
-
-            $venta = $this->ventaService->updateVenta($id, $validated, $vendedorId);
+            // Evitar transferencia fraudulenta a otro empleado si no es administrador
+            if (!$user->hasPermission('gestionar_ventas_todas')) {
+                unset($validated['empleado_id']);
+            }
+            
+            $empleadoId = $user->hasPermission('gestionar_ventas_todas') ? null : $user->id;
+            $venta = $this->ventaService->updateVenta($id, $validated, $empleadoId);
             
             return response()->json([
                 'status' => 'success',
@@ -88,8 +98,9 @@ class VentaController extends Controller
     public function destroy($id)
     {
         try {
-            $vendedorId = Auth::id();
-            $deleted = $this->ventaService->deleteVenta($id, $vendedorId);
+            $user = Auth::user();
+            $empleadoId = $user->hasPermission('gestionar_ventas_todas') ? null : $user->id;
+            $deleted = $this->ventaService->deleteVenta($id, $empleadoId);
             if (!$deleted) {
                 return response()->json([
                     'status' => 'error',

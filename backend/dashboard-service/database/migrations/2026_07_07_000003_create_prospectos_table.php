@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('telefono', 20)->nullable();
             $table->foreignId('vehiculo_id')->constrained('vehiculos');
             $table->enum('etapa', ['prospeccion', 'calificacion', 'negociacion', 'cierre'])->default('prospeccion');
-            $table->foreignId('vendedor_id')->constrained('vendedores');
+            $table->foreignId('empleado_id')->constrained('empleados');
             $table->timestamps();
         });
     }

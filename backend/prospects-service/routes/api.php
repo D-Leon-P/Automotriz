@@ -3,6 +3,8 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProspectoController;
 use App\Http\Controllers\VehiculoController;
+use App\Http\Controllers\RolController;
+use App\Http\Controllers\EmpleadoController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,3 +28,10 @@ Route::apiResource('vehiculos', VehiculoController::class)->only(['index', 'show
 
 // Rutas de Prospectos
 Route::apiResource('prospectos', ProspectoController::class);
+
+// Rutas de Roles y Permisos
+Route::get('permisos', [RolController::class, 'getAllPermisos']);
+Route::apiResource('roles', RolController::class);
+
+// Rutas de Empleados
+Route::apiResource('empleados', EmpleadoController::class);

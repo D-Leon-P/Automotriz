@@ -6,19 +6,22 @@ use App\Models\Prospecto;
 
 class ProspectoRepository
 {
-    public function allForVendedor($vendedorId)
+    public function allForVendedor($empleadoId)
     {
-        return Prospecto::with(['vehiculo', 'vendedor'])
-            ->where('vendedor_id', $vendedorId)
-            ->get();
+        $query = Prospecto::with(['vehiculo', 'empleado']);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->get();
     }
 
-    public function findForVendedor($id, $vendedorId)
+    public function findForVendedor($id, $empleadoId)
     {
-        return Prospecto::with(['vehiculo', 'vendedor'])
-            ->where('vendedor_id', $vendedorId)
-            ->where('id', $id)
-            ->first();
+        $query = Prospecto::with(['vehiculo', 'empleado'])->where('id', $id);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->first();
     }
 
     public function create(array $data)
@@ -26,20 +29,24 @@ class ProspectoRepository
         return Prospecto::create($data);
     }
 
-    public function update($id, array $data, $vendedorId)
+    public function update($id, array $data, $empleadoId)
     {
-        $prospecto = Prospecto::where('id', $id)
-            ->where('vendedor_id', $vendedorId)
-            ->firstOrFail();
+        $query = Prospecto::where('id', $id);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        $prospecto = $query->firstOrFail();
         $prospecto->update($data);
         return $prospecto;
     }
 
-    public function delete($id, $vendedorId)
+    public function delete($id, $empleadoId)
     {
-        $prospecto = Prospecto::where('id', $id)
-            ->where('vendedor_id', $vendedorId)
-            ->firstOrFail();
+        $query = Prospecto::where('id', $id);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        $prospecto = $query->firstOrFail();
         return $prospecto->delete();
     }
 }

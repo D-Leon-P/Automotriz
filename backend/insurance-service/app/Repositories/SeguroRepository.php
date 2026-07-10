@@ -6,23 +6,26 @@ use App\Models\Seguro;
 
 class SeguroRepository
 {
-    public function allForVendedor($vendedorId)
+    public function allForVendedor($empleadoId)
     {
-        return Seguro::with('venta')
-            ->whereHas('venta', function ($query) use ($vendedorId) {
-                $query->where('vendedor_id', $vendedorId);
-            })
-            ->get();
+        $query = Seguro::with('venta');
+        if ($empleadoId !== null) {
+            $query->whereHas('venta', function ($q) use ($empleadoId) {
+                $q->where('empleado_id', $empleadoId);
+            });
+        }
+        return $query->get();
     }
 
-    public function findForVendedor($id, $vendedorId)
+    public function findForVendedor($id, $empleadoId)
     {
-        return Seguro::with('venta')
-            ->where('id', $id)
-            ->whereHas('venta', function ($query) use ($vendedorId) {
-                $query->where('vendedor_id', $vendedorId);
-            })
-            ->first();
+        $query = Seguro::with('venta')->where('id', $id);
+        if ($empleadoId !== null) {
+            $query->whereHas('venta', function ($q) use ($empleadoId) {
+                $q->where('empleado_id', $empleadoId);
+            });
+        }
+        return $query->first();
     }
 
     public function create(array $data)
@@ -30,26 +33,28 @@ class SeguroRepository
         return Seguro::create($data);
     }
 
-    public function update($id, array $data, $vendedorId)
+    public function update($id, array $data, $empleadoId)
     {
-        $seguro = Seguro::where('id', $id)
-            ->whereHas('venta', function ($query) use ($vendedorId) {
-                $query->where('vendedor_id', $vendedorId);
-            })
-            ->firstOrFail();
-            
+        $query = Seguro::where('id', $id);
+        if ($empleadoId !== null) {
+            $query->whereHas('venta', function ($q) use ($empleadoId) {
+                $q->where('empleado_id', $empleadoId);
+            });
+        }
+        $seguro = $query->firstOrFail();
         $seguro->update($data);
         return $seguro;
     }
 
-    public function delete($id, $vendedorId)
+    public function delete($id, $empleadoId)
     {
-        $seguro = Seguro::where('id', $id)
-            ->whereHas('venta', function ($query) use ($vendedorId) {
-                $query->where('vendedor_id', $vendedorId);
-            })
-            ->firstOrFail();
-            
+        $query = Seguro::where('id', $id);
+        if ($empleadoId !== null) {
+            $query->whereHas('venta', function ($q) use ($empleadoId) {
+                $q->where('empleado_id', $empleadoId);
+            });
+        }
+        $seguro = $query->firstOrFail();
         return $seguro->delete();
     }
 }

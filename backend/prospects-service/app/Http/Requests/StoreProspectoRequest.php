@@ -19,7 +19,7 @@ class StoreProspectoRequest extends FormRequest
             'telefono' => 'nullable|string|max:20',
             'vehiculo_id' => 'required|integer|exists:vehiculos,id',
             'etapa' => 'nullable|string|in:prospeccion,calificacion,negociacion,cierre',
-            'vendedor_id' => 'required|integer|exists:vendedores,id',
+            'empleado_id' => 'sometimes|required|integer|exists:empleados,id',
         ];
     }
 }

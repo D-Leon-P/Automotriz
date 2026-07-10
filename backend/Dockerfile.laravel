@@ -57,9 +57,10 @@ RUN chown -R www-data:www-data /var/www/html
 
 # Copiar y configurar el script de entrada personalizado
 COPY custom-entrypoint.sh /usr/local/bin/custom-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/custom-entrypoint.sh
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh
 
 EXPOSE 80
 
-CMD ["custom-entrypoint.sh"]
+CMD ["/usr/local/bin/custom-entrypoint.sh"]
 

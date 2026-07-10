@@ -38,6 +38,24 @@ const routes = [
     component: Seguros,
     meta: { requiresAuth: true }
   },
+  {
+    path: '/generales/empleados',
+    name: 'Empleados',
+    component: () => import('../views/generales/Empleados.vue'),
+    meta: { requiresAuth: true, permission: 'ver_empleados' }
+  },
+  {
+    path: '/generales/clientes',
+    name: 'Clientes',
+    component: () => import('../views/generales/Clientes.vue'),
+    meta: { requiresAuth: true, permission: 'ver_clientes' }
+  },
+  {
+    path: '/generales/roles',
+    name: 'Roles',
+    component: () => import('../views/generales/Roles.vue'),
+    meta: { requiresAuth: true, permission: 'ver_roles' }
+  },
   // Redireccionar cualquier otra ruta al dashboard
   {
     path: '/:pathMatch(.*)*',
@@ -59,7 +77,13 @@ router.beforeEach((to, from, next) => {
     if (!isLoggedIn) {
       next({ name: 'Login' });
     } else {
-      next();
+      // Verificar permisos de ruta
+      const matchedRecord = to.matched.find(record => record.meta.permission);
+      if (matchedRecord && !authStore.hasPermission(matchedRecord.meta.permission)) {
+        next({ name: 'Dashboard' });
+      } else {
+        next();
+      }
     }
   } else if (to.matched.some(record => record.meta.guest)) {
     if (isLoggedIn) {

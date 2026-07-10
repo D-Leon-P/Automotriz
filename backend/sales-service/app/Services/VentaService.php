@@ -18,22 +18,22 @@ class VentaService
         $this->ventaRepository = $ventaRepository;
     }
 
-    public function getAllVentas($vendedorId)
+    public function getAllVentas($empleadoId)
     {
-        return $this->ventaRepository->allForVendedor($vendedorId);
+        return $this->ventaRepository->allForVendedor($empleadoId);
     }
 
-    public function getVentaById($id, $vendedorId)
+    public function getVentaById($id, $empleadoId)
     {
-        return $this->ventaRepository->findForVendedor($id, $vendedorId);
+        return $this->ventaRepository->findForVendedor($id, $empleadoId);
     }
 
-    public function createVenta(array $data, $vendedorId)
+    public function createVenta(array $data, $empleadoId = null)
     {
-        return DB::transaction(function () use ($data, $vendedorId) {
-            // 1. Obtener y validar el prospecto (Evitar BOLA: Asegurar que pertenece al vendedor autenticado)
+        return DB::transaction(function () use ($data, $empleadoId) {
+            // 1. Obtener y validar el prospecto (Evitar BOLA: Asegurar que pertenece al empleado si no es admin)
             $prospecto = Prospecto::findOrFail($data['prospecto_id']);
-            if ($prospecto->vendedor_id !== $vendedorId) {
+            if ($empleadoId !== null && $prospecto->empleado_id !== $empleadoId) {
                 throw new \Exception("No autorizado para operar con este prospecto.");
             }
             
@@ -48,8 +48,13 @@ class VentaService
                 $vehiculo->decrement('stock');
             }
 
-            // 4. Crear la venta (forzando vendedor_id)
-            $data['vendedor_id'] = $vendedorId;
+            // 4. Crear la venta (forzando empleado_id si no es admin, o usando el del prospecto / del request si lo es)
+            if ($empleadoId !== null) {
+                $data['empleado_id'] = $empleadoId;
+            } else {
+                $data['empleado_id'] = $data['empleado_id'] ?? $prospecto->empleado_id;
+            }
+            
             $venta = $this->ventaRepository->create($data);
 
             // 5. Actualizar etapa del prospecto a 'cierre'
@@ -62,10 +67,10 @@ class VentaService
         });
     }
 
-    public function updateVenta($id, array $data, $vendedorId)
+    public function updateVenta($id, array $data, $empleadoId = null)
     {
-        return DB::transaction(function () use ($id, $data, $vendedorId) {
-            $venta = $this->ventaRepository->findForVendedor($id, $vendedorId);
+        return DB::transaction(function () use ($id, $data, $empleadoId) {
+            $venta = $this->ventaRepository->findForVendedor($id, $empleadoId);
             if (!$venta) {
                 throw new \Exception("Venta no encontrada o no autorizada.");
             }
@@ -86,10 +91,12 @@ class VentaService
                 }
             }
 
-            // Evitar transferencias maliciosas a otros asesores
-            unset($data['vendedor_id']);
+            // Evitar transferencias maliciosas a otros empleados si no es admin
+            if ($empleadoId !== null) {
+                unset($data['empleado_id']);
+            }
 
-            $updatedVenta = $this->ventaRepository->update($id, $data, $vendedorId);
+            $updatedVenta = $this->ventaRepository->update($id, $data, $empleadoId);
 
             $this->notifyN8n('updated', $updatedVenta);
 
@@ -97,10 +104,10 @@ class VentaService
         });
     }
 
-    public function deleteVenta($id, $vendedorId)
+    public function deleteVenta($id, $empleadoId = null)
     {
-        return DB::transaction(function () use ($id, $vendedorId) {
-            $venta = $this->ventaRepository->findForVendedor($id, $vendedorId);
+        return DB::transaction(function () use ($id, $empleadoId) {
+            $venta = $this->ventaRepository->findForVendedor($id, $empleadoId);
             if (!$venta) {
                 return false;
             }
@@ -113,7 +120,7 @@ class VentaService
             }
 
             $this->notifyN8n('deleted', $venta);
-            return $this->ventaRepository->delete($id, $vendedorId);
+            return $this->ventaRepository->delete($id, $empleadoId);
         });
     }
 
@@ -123,7 +130,7 @@ class VentaService
             $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook/ventas');
             Http::timeout(2)->post($n8nUrl, [
                 'action' => $action,
-                'venta' => $venta->load(['prospecto', 'vehiculo', 'vendedor'])->toArray(),
+                'venta' => $venta->load(['prospecto', 'vehiculo', 'empleado'])->toArray(),
                 'timestamp' => now()->toIso8601String()
             ]);
         } catch (\Exception $e) {

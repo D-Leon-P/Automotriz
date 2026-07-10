@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Prospecto;
 use App\Models\Vehiculo;
-use App\Models\Vendedor;
+use App\Models\Empleado;
+use App\Models\Rol;
+use App\Models\Permiso;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Tests\TestCase;
@@ -23,17 +25,27 @@ class SecuritySanitizationTest extends TestCase
     {
         parent::setUp();
 
-        // 1. Crear Vendedores de Prueba
-        $this->vendedor1 = Vendedor::create([
+        // Crear roles y permisos
+        $roleAdmin = Rol::create(['id' => 1, 'nombre' => 'administrador']);
+        $roleVendedor = Rol::create(['id' => 2, 'nombre' => 'vendedor']);
+
+        $permVerPropios = Permiso::create(['nombre' => 'ver_prospectos_propios']);
+        $permGestPropios = Permiso::create(['nombre' => 'gestionar_prospectos_propios']);
+        $roleVendedor->permisos()->attach([$permVerPropios->id, $permGestPropios->id]);
+
+        // 1. Crear Empleados de Prueba
+        $this->vendedor1 = Empleado::create([
             'nombre' => 'Asesor Alfa',
             'email' => 'alfa@automotriz.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
+            'rol_id' => 2
         ]);
 
-        $this->vendedor2 = Vendedor::create([
+        $this->vendedor2 = Empleado::create([
             'nombre' => 'Asesor Beta',
             'email' => 'beta@automotriz.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
+            'rol_id' => 2
         ]);
 
         // 2. Generar tokens JWT para autenticar
@@ -58,7 +70,7 @@ class SecuritySanitizationTest extends TestCase
             'telefono' => '999888777',
             'vehiculo_id' => $this->vehiculo->id,
             'etapa' => 'prospeccion',
-            'vendedor_id' => $this->vendedor1->id // Será sobrescrito por Auth::id() por seguridad
+            'empleado_id' => $this->vendedor1->id // Será sobrescrito por Auth::id() por seguridad
         ];
 
         // Ejecutar petición POST
@@ -89,7 +101,7 @@ class SecuritySanitizationTest extends TestCase
             'telefono' => '123456789',
             'vehiculo_id' => $this->vehiculo->id,
             'etapa' => 'prospeccion',
-            'vendedor_id' => $this->vendedor1->id
+            'empleado_id' => $this->vendedor1->id
         ]);
 
         // Vendedor 2 intenta acceder al prospecto del Vendedor 1
@@ -115,7 +127,7 @@ class SecuritySanitizationTest extends TestCase
             'telefono' => '123456789',
             'vehiculo_id' => $this->vehiculo->id,
             'etapa' => 'prospeccion',
-            'vendedor_id' => $this->vendedor1->id
+            'empleado_id' => $this->vendedor1->id
         ]);
 
         // Vendedor 2 intenta editar el prospecto del Vendedor 1

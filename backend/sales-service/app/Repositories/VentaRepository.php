@@ -6,19 +6,22 @@ use App\Models\Venta;
 
 class VentaRepository
 {
-    public function allForVendedor($vendedorId)
+    public function allForVendedor($empleadoId)
     {
-        return Venta::with(['prospecto', 'vehiculo', 'vendedor'])
-            ->where('vendedor_id', $vendedorId)
-            ->get();
+        $query = Venta::with(['prospecto', 'vehiculo', 'empleado']);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->get();
     }
 
-    public function findForVendedor($id, $vendedorId)
+    public function findForVendedor($id, $empleadoId)
     {
-        return Venta::with(['prospecto', 'vehiculo', 'vendedor'])
-            ->where('vendedor_id', $vendedorId)
-            ->where('id', $id)
-            ->first();
+        $query = Venta::with(['prospecto', 'vehiculo', 'empleado'])->where('id', $id);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->first();
     }
 
     public function create(array $data)
@@ -26,20 +29,24 @@ class VentaRepository
         return Venta::create($data);
     }
 
-    public function update($id, array $data, $vendedorId)
+    public function update($id, array $data, $empleadoId)
     {
-        $venta = Venta::where('id', $id)
-            ->where('vendedor_id', $vendedorId)
-            ->firstOrFail();
+        $query = Venta::where('id', $id);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        $venta = $query->firstOrFail();
         $venta->update($data);
         return $venta;
     }
 
-    public function delete($id, $vendedorId)
+    public function delete($id, $empleadoId)
     {
-        $venta = Venta::where('id', $id)
-            ->where('vendedor_id', $vendedorId)
-            ->firstOrFail();
+        $query = Venta::where('id', $id);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        $venta = $query->firstOrFail();
         return $venta->delete();
     }
 }

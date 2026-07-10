@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Prospecto;
 use App\Models\Vehiculo;
-use App\Models\Vendedor;
+use App\Models\Empleado;
+use App\Models\Rol;
+use App\Models\Permiso;
 use App\Models\Venta;
 use App\Services\VentaService;
 use App\Repositories\VentaRepository;
@@ -24,11 +26,20 @@ class VentaServiceTest extends TestCase
     {
         parent::setUp();
 
+        // Crear roles y permisos
+        $roleAdmin = Rol::create(['id' => 1, 'nombre' => 'administrador']);
+        $roleVendedor = Rol::create(['id' => 2, 'nombre' => 'vendedor']);
+
+        $permVerPropios = Permiso::create(['nombre' => 'ver_ventas_propias']);
+        $permGestPropios = Permiso::create(['nombre' => 'gestionar_ventas_propias']);
+        $roleVendedor->permisos()->attach([$permVerPropios->id, $permGestPropios->id]);
+
         // 1. Crear datos iniciales necesarios
-        $this->vendedor = Vendedor::create([
+        $this->vendedor = Empleado::create([
             'nombre' => 'Asesor Test',
             'email' => 'asesor.test@automotriz.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
+            'rol_id' => 2
         ]);
 
         $this->vehiculo = Vehiculo::create([
@@ -45,7 +56,7 @@ class VentaServiceTest extends TestCase
             'telefono' => '999888777',
             'vehiculo_id' => $this->vehiculo->id,
             'etapa' => 'negociacion',
-            'vendedor_id' => $this->vendedor->id
+            'empleado_id' => $this->vendedor->id
         ]);
 
         $ventaRepository = new VentaRepository();
@@ -58,7 +69,7 @@ class VentaServiceTest extends TestCase
         $ventaData = [
             'prospecto_id' => $this->prospecto->id,
             'vehiculo_id' => $this->vehiculo->id,
-            'vendedor_id' => $this->vendedor->id,
+            'empleado_id' => $this->vendedor->id,
             'monto' => 19500.00,
             'estado' => 'efectiva',
             'motivo_perdida' => null
@@ -90,7 +101,7 @@ class VentaServiceTest extends TestCase
         $ventaData = [
             'prospecto_id' => $this->prospecto->id,
             'vehiculo_id' => $this->vehiculo->id,
-            'vendedor_id' => $this->vendedor->id,
+            'empleado_id' => $this->vendedor->id,
             'monto' => 19500.00,
             'estado' => 'efectiva',
             'motivo_perdida' => null
@@ -109,7 +120,7 @@ class VentaServiceTest extends TestCase
         $ventaData = [
             'prospecto_id' => $this->prospecto->id,
             'vehiculo_id' => $this->vehiculo->id,
-            'vendedor_id' => $this->vendedor->id,
+            'empleado_id' => $this->vendedor->id,
             'monto' => 20000.00,
             'estado' => 'fallida',
             'motivo_perdida' => 'El cliente compró un auto usado en otro lugar.'

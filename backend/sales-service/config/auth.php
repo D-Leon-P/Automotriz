@@ -42,7 +42,7 @@ return [
         ],
         'api' => [
             'driver' => 'jwt',
-            'provider' => 'vendedores',
+            'provider' => 'empleados',
         ],
     ],
 
@@ -69,9 +69,9 @@ return [
             'model' => App\Models\User::class,
         ],
 
-        'vendedores' => [
+        'empleados' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Vendedor::class,
+            'model' => App\Models\Empleado::class,
         ],
 
         // 'users' => [

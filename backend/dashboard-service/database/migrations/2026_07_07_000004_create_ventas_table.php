@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('prospecto_id')->constrained('prospectos');
             $table->foreignId('vehiculo_id')->constrained('vehiculos');
-            $table->foreignId('vendedor_id')->constrained('vendedores');
+            $table->foreignId('empleado_id')->constrained('empleados');
             $table->decimal('monto', 10, 2);
             $table->enum('estado', ['efectiva', 'fallida']);
             $table->string('motivo_perdida', 255)->nullable();

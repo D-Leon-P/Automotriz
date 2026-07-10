@@ -14,20 +14,24 @@ class SeguroController extends Controller
     public function __construct(SeguroService $seguroService)
     {
         $this->middleware('auth:api');
+        $this->middleware('permission:ver_seguros_propios,ver_seguros_todos')->only(['index', 'show']);
+        $this->middleware('permission:gestionar_seguros_propios,gestionar_seguros_todos')->only(['store', 'update', 'destroy']);
         $this->seguroService = $seguroService;
     }
 
     public function index()
     {
-        $vendedorId = Auth::id();
-        $seguros = $this->seguroService->getAllSeguros($vendedorId);
+        $user = Auth::user();
+        $empleadoId = $user->hasPermission('ver_seguros_todos') ? null : $user->id;
+        $seguros = $this->seguroService->getAllSeguros($empleadoId);
         return response()->json($seguros);
     }
 
     public function show($id)
     {
-        $vendedorId = Auth::id();
-        $seguro = $this->seguroService->getSeguroById($id, $vendedorId);
+        $user = Auth::user();
+        $empleadoId = $user->hasPermission('ver_seguros_todos') ? null : $user->id;
+        $seguro = $this->seguroService->getSeguroById($id, $empleadoId);
         if (!$seguro) {
             return response()->json([
                 'status' => 'error',
@@ -40,10 +44,11 @@ class SeguroController extends Controller
     public function store(StoreSeguroRequest $request)
     {
         try {
-            $vendedorId = Auth::id();
+            $user = Auth::user();
             $validated = $request->validated();
             
-            $seguro = $this->seguroService->createSeguro($validated, $vendedorId);
+            $empleadoId = $user->hasPermission('gestionar_seguros_todos') ? null : $user->id;
+            $seguro = $this->seguroService->createSeguro($validated, $empleadoId);
 
             return response()->json([
                 'status' => 'success',
@@ -61,10 +66,11 @@ class SeguroController extends Controller
     public function update(UpdateSeguroRequest $request, $id)
     {
         try {
-            $vendedorId = Auth::id();
+            $user = Auth::user();
             $validated = $request->validated();
             
-            $seguro = $this->seguroService->updateSeguro($id, $validated, $vendedorId);
+            $empleadoId = $user->hasPermission('gestionar_seguros_todos') ? null : $user->id;
+            $seguro = $this->seguroService->updateSeguro($id, $validated, $empleadoId);
 
             return response()->json([
                 'status' => 'success',
@@ -82,8 +88,9 @@ class SeguroController extends Controller
     public function destroy($id)
     {
         try {
-            $vendedorId = Auth::id();
-            $deleted = $this->seguroService->deleteSeguro($id, $vendedorId);
+            $user = Auth::user();
+            $empleadoId = $user->hasPermission('gestionar_seguros_todos') ? null : $user->id;
+            $deleted = $this->seguroService->deleteSeguro($id, $empleadoId);
             if (!$deleted) {
                 return response()->json([
                     'status' => 'error',

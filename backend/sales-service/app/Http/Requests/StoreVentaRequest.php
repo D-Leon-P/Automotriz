@@ -16,7 +16,7 @@ class StoreVentaRequest extends FormRequest
         return [
             'prospecto_id' => 'required|integer|exists:prospectos,id',
             'vehiculo_id' => 'required|integer|exists:vehiculos,id',
-            'vendedor_id' => 'required|integer|exists:vendedores,id',
+            'empleado_id' => 'sometimes|required|integer|exists:empleados,id',
             'monto' => 'required|numeric|min:0',
             'estado' => 'required|string|in:efectiva,fallida',
             'motivo_perdida' => 'required_if:estado,fallida|nullable|string|max:255',

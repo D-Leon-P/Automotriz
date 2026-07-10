@@ -7,22 +7,40 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-class Vendedor extends Authenticatable implements JWTSubject
-{
-    use HasFactory, Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-    protected $table = 'vendedores';
+class Empleado extends Authenticatable implements JWTSubject
+{
+    use HasFactory, Notifiable, SoftDeletes;
+
+    protected $table = 'empleados';
 
     protected $fillable = [
         'nombre',
         'email',
         'password',
+        'rol_id',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
     ];
+
+    public function rol()
+    {
+        return $this->belongsTo(Rol::class, 'rol_id');
+    }
+
+    public function hasPermission(string $permissionName): bool
+    {
+        return $this->rol && $this->rol->permisos()->where('nombre', $permissionName)->exists();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->rol && $this->rol->nombre === 'administrador';
+    }
 
     public function getJWTIdentifier()
     {

@@ -3,7 +3,7 @@
     <!-- Encabezado -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-extrabold tracking-tight text-white font-serif">Registro de Ventas</h2>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white">Registro de Ventas</h2>
         <p class="text-slate-400 mt-1">Monitorea los cierres efectivos y documenta los motivos de pérdida.</p>
       </div>
       <button
@@ -25,7 +25,7 @@
       <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-4">
         <i class="fas fa-receipt"></i>
       </div>
-      <h3 class="text-lg font-bold text-slate-300 font-serif">No hay ventas registradas</h3>
+      <h3 class="text-lg font-bold text-slate-300">No hay ventas registradas</h3>
       <p class="text-sm text-slate-500 max-w-sm mt-1">Aún no se han documentado cierres comerciales. Registra uno nuevo para iniciar.</p>
     </div>
 
@@ -37,7 +37,7 @@
             <th class="p-4 pl-6">Cliente (Prospecto)</th>
             <th class="p-4">Vehículo</th>
             <th class="p-4">Monto</th>
-            <th class="p-4">Asesor</th>
+            <th class="p-4">Colaborador</th>
             <th class="p-4">Estado</th>
             <th class="p-4">Observaciones / Motivo</th>
             <th class="p-4 pr-6 text-right">Acciones</th>
@@ -55,10 +55,10 @@
               <span v-else class="text-slate-500">N/A</span>
             </td>
             <td class="p-4 text-amber-400 font-extrabold">
-              $ {{ formatCurrency(v.monto) }}
+              S/ {{ formatCurrency(v.monto) }}
             </td>
             <td class="p-4 text-slate-400 font-medium">
-              {{ v.vendedor ? v.vendedor.nombre : 'No asignado' }}
+              {{ v.empleado ? v.empleado.nombre : 'No asignado' }}
             </td>
             <td class="p-4">
               <span
@@ -77,6 +77,7 @@
               <!-- Botón Eliminar -->
               <button
                 @click="handleDelete(v.id)"
+                v-title.right="'Eliminar venta'"
                 class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-trash-alt text-xs"></i>
@@ -91,7 +92,7 @@
     <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
       <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-4 border-b border-white/5">
-          <h3 class="text-xl font-bold text-white font-serif">Registrar Venta / Cierre</h3>
+          <h3 class="text-xl font-bold text-white">Registrar Venta / Cierre</h3>
           <button @click="closeFormModal" class="text-slate-400 hover:text-slate-200">
             <i class="fas fa-times text-lg"></i>
           </button>
@@ -100,17 +101,12 @@
         <form @submit.prevent="saveVenta" class="space-y-4">
           <div>
             <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Seleccionar Prospecto</label>
-            <select
+            <CustomSelect
               v-model="form.prospecto_id"
+              :options="prospectosOptions"
+              placeholder="Selecciona el cliente..."
               @change="onProspectoSelect"
-              required
-              class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300"
-            >
-              <option value="" disabled>Selecciona el cliente...</option>
-              <option v-for="p in activeProspectos" :key="p.id" :value="p.id">
-                {{ p.nombre }} - Interés: {{ p.vehiculo ? `${p.vehiculo.marca} ${p.vehiculo.modelo}` : 'Auto no asignado' }}
-              </option>
-            </select>
+            />
             <p class="text-xxs text-slate-500 mt-1">Sólo se muestran prospectos activos en etapa de venta (previos al cierre).</p>
           </div>
 
@@ -120,22 +116,23 @@
               <input type="text" readonly :value="selectedVehiculoName" class="w-full p-2.5 bg-slate-950/40 border border-white/5 rounded-xl text-slate-500 text-sm focus:outline-none" />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Monto de Venta ($)</label>
-              <input v-model="form.monto" type="number" step="0.01" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Monto de Venta (S/)</label>
+              <input v-model="form.monto" type="number" step="0.01" readonly required class="w-full p-2.5 bg-slate-950/40 border border-white/5 rounded-xl text-slate-500 text-sm focus:outline-none" />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Asesor Comercial</label>
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Colaborador Asignado</label>
               <input type="text" readonly :value="currentUser.nombre" class="w-full p-2.5 bg-slate-950/40 border border-white/5 rounded-xl text-slate-500 text-sm" />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Resultado de Venta</label>
-              <select v-model="form.estado" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300">
-                <option value="efectiva">Venta Efectiva</option>
-                <option value="fallida">Venta Fallida</option>
-              </select>
+              <CustomSelect
+                v-model="form.estado"
+                :options="estadoOptions"
+                placeholder="Selecciona el resultado..."
+              />
             </div>
           </div>
 
@@ -171,8 +168,12 @@ import { useAuthStore } from '../stores/auth';
 import { ventaService } from '../services/ventaService';
 import { prospectoService } from '../services/prospectoService';
 import { useNotification } from '../composables/useNotification';
+import CustomSelect from '../components/CustomSelect.vue';
 
 export default {
+  components: {
+    CustomSelect
+  },
   setup() {
     const authStore = ref(useAuthStore());
     const notification = useNotification();
@@ -186,13 +187,25 @@ export default {
     const form = ref({
       prospecto_id: '',
       vehiculo_id: '',
-      vendedor_id: '',
+      empleado_id: '',
       monto: '',
       estado: 'efectiva',
       motivo_perdida: '',
     });
 
     const currentUser = computed(() => authStore.value.user);
+
+    const prospectosOptions = computed(() => {
+      return activeProspectos.value.map(p => ({
+        value: p.id,
+        label: `${p.nombre} - Interés: ${p.vehiculo ? `${p.vehiculo.marca} ${p.vehiculo.modelo}` : 'Auto no asignado'}`
+      }));
+    });
+
+    const estadoOptions = [
+      { value: 'efectiva', label: 'Venta Efectiva' },
+      { value: 'fallida', label: 'Venta Fallida' }
+    ];
 
     // Filtrar prospectos activos (no cerrados)
     const activeProspectos = computed(() => {
@@ -238,7 +251,7 @@ export default {
       form.value = {
         prospecto_id: '',
         vehiculo_id: '',
-        vendedor_id: currentUser.value.id,
+        empleado_id: currentUser.value.id,
         monto: '',
         estado: 'efectiva',
         motivo_perdida: '',
@@ -305,6 +318,10 @@ export default {
       selectedVehiculoName,
       saveVenta,
       handleDelete,
+      
+      // Select options
+      prospectosOptions,
+      estadoOptions,
     };
   },
 };

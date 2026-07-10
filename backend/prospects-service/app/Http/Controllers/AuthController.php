@@ -33,7 +33,11 @@ class AuthController extends Controller
 
     public function me()
     {
-        return response()->json(Auth::guard('api')->user());
+        $user = Auth::guard('api')->user();
+        if ($user) {
+            $user->load(['rol.permisos']);
+        }
+        return response()->json($user);
     }
 
     public function logout()
@@ -72,10 +76,15 @@ class AuthController extends Controller
             'Lax'                   // SameSite (Mitigación CSRF)
         );
 
+        $user = Auth::guard('api')->user();
+        if ($user) {
+            $user->load(['rol.permisos']);
+        }
+
         return response()->json([
             'status' => 'success',
             'expires_in' => $minutes * 60,
-            'vendedor' => Auth::guard('api')->user()
+            'user' => $user
         ])->withCookie($cookie);
     }
 }

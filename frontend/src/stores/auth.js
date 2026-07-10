@@ -15,6 +15,22 @@ export const useAuthStore = defineStore('auth', {
     // La autenticación ahora es implícita basada en si tenemos metadatos del usuario.
     // Si la cookie expira, cualquier consulta subsiguiente fallará con un 401.
     isAuthenticated: (state) => !!state.user,
+    hasPermission: (state) => {
+      return (permission) => {
+        if (!state.user || !state.user.rol || !state.user.rol.permisos) {
+          return false;
+        }
+        return state.user.rol.permisos.some(p => p.nombre === permission);
+      };
+    },
+    hasRole: (state) => {
+      return (role) => {
+        if (!state.user || !state.user.rol) {
+          return false;
+        }
+        return state.user.rol.nombre === role;
+      };
+    }
   },
 
   actions: {
@@ -25,10 +41,10 @@ export const useAuthStore = defineStore('auth', {
         const response = await axios.post('/api/auth/login', { email, password });
         
         // La cookie 'auth_token' es inyectada automáticamente por el navegador
-        const { vendedor } = response.data;
+        const { user } = response.data;
         
-        this.user = vendedor;
-        localStorage.setItem('auth_user', JSON.stringify(vendedor));
+        this.user = user;
+        localStorage.setItem('auth_user', JSON.stringify(user));
         return true;
       } catch (err) {
         this.error = err.response?.data?.message || 'Error al iniciar sesión';

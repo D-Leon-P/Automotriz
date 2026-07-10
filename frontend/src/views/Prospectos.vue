@@ -3,7 +3,7 @@
     <!-- Encabezado -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-extrabold tracking-tight text-white font-serif">Gestión de Prospectos</h2>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white">Gestión de Prospectos</h2>
         <p class="text-slate-400 mt-1">Registra y califica potenciales clientes a través de tu embudo comercial.</p>
       </div>
       <button
@@ -42,7 +42,7 @@
       <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-4">
         <i class="fas fa-users-slash"></i>
       </div>
-      <h3 class="text-lg font-bold text-slate-300 font-serif">No hay prospectos registrados</h3>
+      <h3 class="text-lg font-bold text-slate-300">No hay prospectos registrados</h3>
       <p class="text-sm text-slate-500 max-w-sm mt-1">Registra tu primer prospecto o selecciona otra etapa de filtrado para ver la lista.</p>
     </div>
 
@@ -54,7 +54,7 @@
             <th class="p-4 pl-6">Cliente</th>
             <th class="p-4">Contacto</th>
             <th class="p-4">Vehículo de Interés</th>
-            <th class="p-4">Asesor</th>
+            <th class="p-4">Colaborador</th>
             <th class="p-4">Etapa</th>
             <th class="p-4 pr-6 text-right">Acciones</th>
           </tr>
@@ -75,7 +75,7 @@
               <span v-else class="text-slate-500">No asignado</span>
             </td>
             <td class="p-4 text-slate-400 font-medium">
-              {{ p.vendedor ? p.vendedor.nombre : 'No asignado' }}
+              {{ p.empleado ? p.empleado.nombre : 'No asignado' }}
             </td>
             <td class="p-4">
               <span
@@ -105,7 +105,7 @@
               <button
                 @click="openEditModal(p)"
                 v-title="'Editar datos'"
-                class="p-2 bg-slate-900/20 border border-white/5 hover:border-amber-500/30 text-slate-400 hover:text-amber-400 rounded-xl transition-all duration-200"
+                class="p-2 bg-slate-900/20 border border-white/5 hover:border-sky-500/30 text-slate-400 hover:text-sky-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-edit text-xs"></i>
               </button>
@@ -113,6 +113,7 @@
               <!-- Botón Eliminar -->
               <button
                 @click="handleDelete(p.id)"
+                v-title.right="'Eliminar prospecto'"
                 class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-trash-alt text-xs"></i>
@@ -127,7 +128,7 @@
     <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
       <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-4 border-b border-white/5">
-          <h3 class="text-xl font-bold text-white font-serif">
+          <h3 class="text-xl font-bold text-white">
             {{ isEditing ? 'Editar Prospecto' : 'Registrar Prospecto' }}
           </h3>
           <button @click="closeFormModal" class="text-slate-400 hover:text-slate-200">
@@ -154,28 +155,26 @@
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Vehículo de Interés</label>
-              <select v-model="form.vehiculo_id" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300">
-                <option value="" disabled>Selecciona un auto</option>
-                <option v-for="v in vehiculos" :key="v.id" :value="v.id">
-                  {{ v.marca }} {{ v.modelo }} ({{ v.anio }}) - ${{ v.precio }}
-                </option>
-              </select>
+              <CustomSelect
+                v-model="form.vehiculo_id"
+                :options="vehiculosOptions"
+                placeholder="Selecciona un auto"
+              />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Asesor Comercial</label>
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Colaborador Asignado</label>
               <input type="text" readonly :value="currentUser.nombre" class="w-full p-2.5 bg-slate-950/40 border border-white/5 rounded-xl text-slate-500 text-sm focus:outline-none" />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Etapa Inicial</label>
-              <select v-model="form.etapa" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300">
-                <option value="prospeccion">Prospección Inicial</option>
-                <option value="calificacion">Calificación</option>
-                <option value="negociacion">Negociación</option>
-                <option value="cierre">Cierre</option>
-              </select>
+              <CustomSelect
+                v-model="form.etapa"
+                :options="etapaOptions"
+                placeholder="Selecciona una etapa"
+              />
             </div>
           </div>
 
@@ -195,7 +194,7 @@
     <div v-if="showAdvanceModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
       <div class="w-full max-w-sm glass-panel p-6 border-slate-900/40 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-2 border-b border-slate-900">
-          <h3 class="text-xl font-bold text-white font-serif">Actualizar Etapa</h3>
+          <h3 class="text-xl font-bold text-white">Actualizar Etapa</h3>
           <button @click="closeAdvanceModal" class="text-slate-400 hover:text-slate-200">
             <i class="fas fa-times text-lg"></i>
           </button>
@@ -236,8 +235,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { prospectoService } from '../services/prospectoService';
 import { useNotification } from '../composables/useNotification';
+import CustomSelect from '../components/CustomSelect.vue';
 
 export default {
+  components: {
+    CustomSelect
+  },
   setup() {
     const authStore = useAuthStore();
     const notification = useNotification();
@@ -258,6 +261,20 @@ export default {
 
     const currentUser = computed(() => authStore.user);
 
+    const vehiculosOptions = computed(() => {
+      return vehiculos.value.map(v => ({
+        value: v.id,
+        label: `${v.marca} ${v.modelo} (${v.anio}) - S/ ${parseFloat(v.precio).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+      }));
+    });
+
+    const etapaOptions = [
+      { value: 'prospeccion', label: 'Prospección Inicial' },
+      { value: 'calificacion', label: 'Calificación' },
+      { value: 'negociacion', label: 'Negociación' },
+      { value: 'cierre', label: 'Cierre' }
+    ];
+
     // Modal de edición/adición
     const showFormModal = ref(false);
     const isEditing = ref(false);
@@ -268,7 +285,7 @@ export default {
       telefono: '',
       vehiculo_id: '',
       etapa: 'prospeccion',
-      vendedor_id: '',
+      empleado_id: '',
     });
 
     // Modal de avance de etapa rápido
@@ -321,7 +338,7 @@ export default {
         telefono: '',
         vehiculo_id: '',
         etapa: 'prospeccion',
-        vendedor_id: currentUser.value.id,
+        empleado_id: currentUser.value.id,
       };
       showFormModal.value = true;
     };
@@ -335,7 +352,7 @@ export default {
         telefono: p.telefono,
         vehiculo_id: p.vehiculo_id,
         etapa: p.etapa,
-        vendedor_id: p.vendedor_id,
+        empleado_id: p.empleado_id,
       };
       showFormModal.value = true;
     };
@@ -426,6 +443,10 @@ export default {
       openAdvanceModal,
       closeAdvanceModal,
       updateStage,
+      
+      // Select options
+      vehiculosOptions,
+      etapaOptions,
     };
   },
 };

@@ -3,7 +3,7 @@
     <!-- Encabezado -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-extrabold tracking-tight text-white font-serif">Seguros Vehiculares</h2>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white">Seguros Vehiculares</h2>
         <p class="text-slate-400 mt-1">Asocia pólizas y gestiona los seguros complementarios de cada venta.</p>
       </div>
       <button
@@ -25,7 +25,7 @@
       <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-4">
         <i class="fas fa-file-shield"></i>
       </div>
-      <h3 class="text-lg font-bold text-slate-300 font-serif">No hay seguros vinculados</h3>
+      <h3 class="text-lg font-bold text-slate-300">No hay seguros vinculados</h3>
       <p class="text-sm text-slate-500 max-w-sm mt-1">Vincula tu primera póliza de seguro vehicular a una venta concretada para comenzar el seguimiento.</p>
     </div>
 
@@ -50,15 +50,15 @@
                   ID Venta #{{ s.venta.id }}
                 </span>
                 <span class="text-xs text-slate-500 mt-0.5">
-                  Monto auto: ${{ formatCurrency(s.venta.monto) }}
+                  Monto auto: S/ {{ formatCurrency(s.venta.monto) }}
                 </span>
               </div>
               <span v-else class="text-slate-500">Venta no disponible</span>
             </td>
             <td class="p-4 text-slate-300 font-semibold">{{ s.tipo_seguro }}</td>
-            <td class="p-4 text-slate-300">$ {{ formatCurrency(s.prima_esperada) }}</td>
+            <td class="p-4 text-slate-300">S/ {{ formatCurrency(s.prima_esperada) }}</td>
             <td class="p-4 text-slate-200 font-bold">
-              {{ s.prima_real ? `$ ${formatCurrency(s.prima_real)}` : 'Pendiente' }}
+              {{ s.prima_real ? `S/ ${formatCurrency(s.prima_real)}` : 'Pendiente' }}
             </td>
             <td class="p-4">
               <span
@@ -74,7 +74,8 @@
               <!-- Botón Editar -->
               <button
                 @click="openEditModal(s)"
-                class="p-2 bg-slate-900/20 border border-white/5 hover:border-amber-500/30 text-slate-400 hover:text-amber-400 rounded-xl transition-all duration-200"
+                v-title="'Editar póliza'"
+                class="p-2 bg-slate-900/20 border border-white/5 hover:border-sky-500/30 text-slate-400 hover:text-sky-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-edit text-xs"></i>
               </button>
@@ -82,6 +83,7 @@
               <!-- Botón Eliminar -->
               <button
                 @click="handleDelete(s.id)"
+                v-title.right="'Eliminar póliza'"
                 class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
               >
                 <i class="fas fa-trash-alt text-xs"></i>
@@ -96,7 +98,7 @@
     <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
       <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-4 border-b border-white/5">
-          <h3 class="text-xl font-bold text-white font-serif">
+          <h3 class="text-xl font-bold text-white">
             {{ isEditing ? 'Editar Póliza de Seguro' : 'Vincular Póliza de Seguro' }}
           </h3>
           <button @click="closeFormModal" class="text-slate-400 hover:text-slate-200">
@@ -106,18 +108,13 @@
 
         <form @submit.prevent="saveSeguro" class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Seleccionar Venta</label>
-            <select
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Seleccionar Venta Efectiva</label>
+            <CustomSelect
               v-model="form.venta_id"
+              :options="ventasOptions"
+              placeholder="Selecciona la venta..."
               :disabled="isEditing"
-              required
-              class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300 disabled:opacity-50"
-            >
-              <option value="" disabled>Selecciona la venta...</option>
-              <option v-for="v in ventasEfectivas" :key="v.id" :value="v.id">
-                Venta #{{ v.id }} - Monto: ${{ formatCurrency(v.monto) }}
-              </option>
-            </select>
+            />
           </div>
 
           <div>
@@ -127,21 +124,22 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Prima Esperada ($)</label>
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Prima Esperada (S/)</label>
               <input v-model="form.prima_esperada" type="number" step="0.01" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Prima Real ($)</label>
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Prima Real (S/)</label>
               <input v-model="form.prima_real" type="number" step="0.01" :required="form.estado === 'vendido'" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
           </div>
 
           <div>
             <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Estado de Póliza</label>
-            <select v-model="form.estado" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300">
-              <option value="prospectado">Prospectado</option>
-              <option value="vendido">Vendido</option>
-            </select>
+            <CustomSelect
+              v-model="form.estado"
+              :options="estadoOptions"
+              placeholder="Selecciona el estado..."
+            />
           </div>
 
           <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
@@ -163,8 +161,12 @@ import { ref, computed, onMounted } from 'vue';
 import { seguroService } from '../services/seguroService';
 import { ventaService } from '../services/ventaService';
 import { useNotification } from '../composables/useNotification';
+import CustomSelect from '../components/CustomSelect.vue';
 
 export default {
+  components: {
+    CustomSelect
+  },
   setup() {
     const notification = useNotification();
 
@@ -188,6 +190,18 @@ export default {
     const ventasEfectivas = computed(() => {
       return ventas.value.filter((v) => v.estado === 'efectiva');
     });
+
+    const ventasOptions = computed(() => {
+      return ventasEfectivas.value.map(v => ({
+        value: v.id,
+        label: `Venta #${v.id} - Monto: S/ ${parseFloat(v.monto).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+      }));
+    });
+
+    const estadoOptions = [
+      { value: 'prospectado', label: 'Prospectado' },
+      { value: 'vendido', label: 'Vendido' }
+    ];
 
     const loadSeguros = async () => {
       loading.value = true;
@@ -300,6 +314,10 @@ export default {
       closeFormModal,
       saveSeguro,
       handleDelete,
+      
+      // Select Options
+      ventasOptions,
+      estadoOptions,
     };
   },
 };

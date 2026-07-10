@@ -13,15 +13,15 @@ class DashboardService
         $this->dashboardRepository = $dashboardRepository;
     }
 
-    public function getMetrics($vendedorId)
+    public function getMetrics($empleadoId)
     {
-        $totalProspectos = $this->dashboardRepository->getProspectsCount($vendedorId);
-        $prospectosEnProceso = $this->dashboardRepository->getProspectsInProcessCount($vendedorId);
-        $prospectosPorEtapa = $this->dashboardRepository->getProspectsByStage($vendedorId);
+        $totalProspectos = $this->dashboardRepository->getProspectsCount($empleadoId);
+        $prospectosEnProceso = $this->dashboardRepository->getProspectsInProcessCount($empleadoId);
+        $prospectosPorEtapa = $this->dashboardRepository->getProspectsByStage($empleadoId);
         
-        $salesSummary = $this->dashboardRepository->getSalesSummary($vendedorId);
-        $insurancesSummary = $this->dashboardRepository->getInsurancesSummary($vendedorId);
-        $conversionesPorVendedor = $this->dashboardRepository->getConversionForSeller($vendedorId);
+        $salesSummary = $this->dashboardRepository->getSalesSummary($empleadoId);
+        $insurancesSummary = $this->dashboardRepository->getInsurancesSummary($empleadoId);
+        $conversionesPorVendedor = $this->dashboardRepository->getConversionForSeller($empleadoId);
 
         // 1. Calcular totales de ventas
         $ventasRealizadas = 0;

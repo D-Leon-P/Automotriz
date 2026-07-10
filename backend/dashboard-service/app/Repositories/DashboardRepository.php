@@ -9,60 +9,75 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardRepository
 {
-    public function getProspectsCount($vendedorId)
+    public function getProspectsCount($empleadoId)
     {
-        return Prospecto::where('vendedor_id', $vendedorId)->count();
+        $query = Prospecto::query();
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->count();
     }
 
-    public function getProspectsInProcessCount($vendedorId)
+    public function getProspectsInProcessCount($empleadoId)
     {
-        return Prospecto::where('vendedor_id', $vendedorId)
-            ->whereIn('etapa', ['prospeccion', 'calificacion', 'negociacion'])
-            ->count();
+        $query = Prospecto::query()->whereIn('etapa', ['prospeccion', 'calificacion', 'negociacion']);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->count();
     }
 
-    public function getProspectsByStage($vendedorId)
+    public function getProspectsByStage($empleadoId)
     {
-        return Prospecto::select('etapa', DB::raw('count(*) as total'))
-            ->where('vendedor_id', $vendedorId)
-            ->groupBy('etapa')
-            ->get();
+        $query = Prospecto::select('etapa', DB::raw('count(*) as total'));
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->groupBy('etapa')->get();
     }
 
-    public function getSalesSummary($vendedorId)
+    public function getSalesSummary($empleadoId)
     {
-        return Venta::select('estado', DB::raw('count(*) as total'), DB::raw('SUM(monto) as total_monto'))
-            ->where('vendedor_id', $vendedorId)
-            ->groupBy('estado')
-            ->get();
+        $query = Venta::select('estado', DB::raw('count(*) as total'), DB::raw('SUM(monto) as total_monto'));
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->groupBy('estado')->get();
     }
 
-    public function getInsurancesSummary($vendedorId)
+    public function getInsurancesSummary($empleadoId)
     {
-        return Seguro::select('seguros.estado', DB::raw('count(*) as total'), DB::raw('SUM(seguros.prima_real) as total_prima_real'), DB::raw('SUM(seguros.prima_esperada) as total_prima_esperada'))
-            ->join('ventas', 'seguros.venta_id', '=', 'ventas.id')
-            ->where('ventas.vendedor_id', $vendedorId)
-            ->groupBy('seguros.estado')
-            ->get();
+        $query = Seguro::select('seguros.estado', DB::raw('count(*) as total'), DB::raw('SUM(seguros.prima_real) as total_prima_real'), DB::raw('SUM(seguros.prima_esperada) as total_prima_esperada'))
+            ->join('ventas', 'seguros.venta_id', '=', 'ventas.id');
+        
+        if ($empleadoId !== null) {
+            $query->where('ventas.empleado_id', $empleadoId);
+        }
+        
+        return $query->groupBy('seguros.estado')->get();
     }
 
-    public function getConversionForSeller($vendedorId)
+    public function getConversionForSeller($empleadoId)
     {
-        return DB::table('vendedores')
-            ->leftJoin('prospectos', 'vendedores.id', '=', 'prospectos.vendedor_id')
+        $query = DB::table('empleados')
+            ->leftJoin('prospectos', 'empleados.id', '=', 'prospectos.empleado_id')
             ->leftJoin('ventas', function($join) {
                 $join->on('prospectos.id', '=', 'ventas.prospecto_id')
                      ->where('ventas.estado', '=', 'efectiva');
             })
             ->select(
-                'vendedores.id',
-                'vendedores.nombre',
+                'empleados.id',
+                'empleados.nombre',
                 DB::raw('COUNT(DISTINCT prospectos.id) as total_prospectos'),
                 DB::raw('COUNT(DISTINCT ventas.id) as ventas_efectivas'),
                 DB::raw('IF(COUNT(DISTINCT prospectos.id) > 0, (COUNT(DISTINCT ventas.id) / COUNT(DISTINCT prospectos.id)) * 100, 0) as tasa_conversion')
-            )
-            ->where('vendedores.id', $vendedorId)
-            ->groupBy('vendedores.id', 'vendedores.nombre')
+            );
+            
+        if ($empleadoId !== null) {
+            $query->where('empleados.id', $empleadoId);
+        }
+        
+        return $query->groupBy('empleados.id', 'empleados.nombre')
             ->get();
     }
 }

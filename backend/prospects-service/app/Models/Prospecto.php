@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Prospecto extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'prospectos';
 
     protected $fillable = [
@@ -14,7 +17,7 @@ class Prospecto extends Model
         'telefono',
         'vehiculo_id',
         'etapa',
-        'vendedor_id',
+        'empleado_id',
     ];
 
     public function vehiculo()
@@ -22,8 +25,8 @@ class Prospecto extends Model
         return $this->belongsTo(Vehiculo::class, 'vehiculo_id');
     }
 
-    public function vendedor()
+    public function empleado()
     {
-        return $this->belongsTo(Vendedor::class, 'vendedor_id');
+        return $this->belongsTo(Empleado::class, 'empleado_id');
     }
 }
