@@ -11,6 +11,11 @@ class ClienteRepository
         return Cliente::get();
     }
 
+    public function findByDocumento($documento)
+    {
+        return Cliente::where('documento', $documento)->first();
+    }
+
     public function find($id)
     {
         return Cliente::find($id);

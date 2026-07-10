@@ -91,33 +91,42 @@
               </span>
             </td>
             <td class="p-4 pr-6 text-right space-x-2">
-              <!-- Botón Avanzar Etapa -->
-              <button
-                v-if="p.etapa !== 'cierre'"
-                @click="openAdvanceModal(p)"
-                v-title="'Avanzar/Editar etapa'"
-                class="p-2 bg-slate-900/20 border border-white/5 hover:border-amber-500/30 text-slate-400 hover:text-amber-400 rounded-xl transition-all duration-200"
-              >
-                <i class="fas fa-step-forward text-xs"></i>
-              </button>
-              
-              <!-- Botón Editar Ficha -->
-              <button
-                @click="openEditModal(p)"
-                v-title="'Editar datos'"
-                class="p-2 bg-slate-900/20 border border-white/5 hover:border-sky-500/30 text-slate-400 hover:text-sky-400 rounded-xl transition-all duration-200"
-              >
-                <i class="fas fa-edit text-xs"></i>
-              </button>
+              <template v-if="p.etapa !== 'cierre'">
+                <!-- Botón Avanzar Etapa -->
+                <button
+                  @click="openAdvanceModal(p)"
+                  v-title="'Avanzar/Editar etapa'"
+                  class="p-2 bg-slate-900/20 border border-white/5 hover:border-amber-500/30 text-slate-400 hover:text-amber-400 rounded-xl transition-all duration-200"
+                >
+                  <i class="fas fa-step-forward text-xs"></i>
+                </button>
+                
+                <!-- Botón Editar Ficha -->
+                <button
+                  @click="openEditModal(p)"
+                  v-title="'Editar datos'"
+                  class="p-2 bg-slate-900/20 border border-white/5 hover:border-sky-500/30 text-slate-400 hover:text-sky-400 rounded-xl transition-all duration-200"
+                >
+                  <i class="fas fa-edit text-xs"></i>
+                </button>
 
-              <!-- Botón Eliminar -->
-              <button
-                @click="handleDelete(p.id)"
-                v-title.right="'Eliminar prospecto'"
-                class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
-              >
-                <i class="fas fa-trash-alt text-xs"></i>
-              </button>
+                <!-- Botón Eliminar -->
+                <button
+                  @click="handleDelete(p.id)"
+                  v-title.right="'Eliminar prospecto'"
+                  class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
+                >
+                  <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+              </template>
+              <template v-else>
+                <span
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-950/40 border border-white/5 rounded-xl text-[10px] font-bold text-slate-500"
+                >
+                  <i class="fas fa-lock text-[10px]"></i>
+                  <span>Bloqueado (Cierre)</span>
+                </span>
+              </template>
             </td>
           </tr>
         </tbody>
@@ -125,8 +134,9 @@
     </div>
 
     <!-- Modal Registrar/Editar Prospecto -->
-    <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
-      <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
+    <teleport to="body">
+      <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-4 border-b border-white/5">
           <h3 class="text-xl font-bold text-white">
             {{ isEditing ? 'Editar Prospecto' : 'Registrar Prospecto' }}
@@ -137,21 +147,81 @@
         </div>
 
         <form @submit.prevent="saveProspecto" class="space-y-4">
+          <!-- Documento y Búsqueda -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nombre Completo</label>
-              <input v-model="form.nombre" type="text" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Tipo Documento</label>
+              <CustomSelect
+                v-model="form.tipo_documento"
+                :options="tipoDocumentoOptions"
+                placeholder="Selecciona tipo..."
+                @change="handleTipoDocumentoChange"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nº Documento</label>
+              <div class="relative flex items-center">
+                <input
+                  v-model="form.documento"
+                  type="text"
+                  required
+                  class="w-full p-2.5 pr-20 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300"
+                  :placeholder="documentoPlaceholder"
+                />
+                <button
+                  type="button"
+                  @click="buscarCliente"
+                  class="absolute right-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-md"
+                >
+                  <i class="fas fa-search"></i>
+                  <span>Buscar</span>
+                </button>
+              </div>
+              <p class="text-[9px] text-slate-500 mt-1 font-medium leading-none">
+                {{ documentoHint }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Campos de datos del cliente (autocompletados y de sólo lectura para conservar origen) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nombre / Razón Social</label>
+              <input
+                v-model="form.nombre"
+                type="text"
+                required
+                readonly
+                class="w-full p-2.5 border rounded-xl text-sm focus:outline-none cursor-not-allowed transition-all duration-300"
+                :class="form.nombre ? 'text-slate-200 bg-slate-900/30 border-white/10' : 'text-slate-500 bg-slate-950/40 border-white/5'"
+                placeholder="Use el buscador de documento"
+              />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Email</label>
-              <input v-model="form.email" type="email" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <input
+                v-model="form.email"
+                type="email"
+                required
+                readonly
+                class="w-full p-2.5 border rounded-xl text-sm focus:outline-none cursor-not-allowed transition-all duration-300"
+                :class="form.email ? 'text-slate-200 bg-slate-900/30 border-white/10' : 'text-slate-500 bg-slate-950/40 border-white/5'"
+                placeholder="Use el buscador de documento"
+              />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Teléfono</label>
-              <input v-model="form.telefono" type="text" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <input
+                v-model="form.telefono"
+                type="text"
+                readonly
+                class="w-full p-2.5 border rounded-xl text-sm focus:outline-none cursor-not-allowed transition-all duration-300"
+                :class="form.telefono ? 'text-slate-200 bg-slate-900/30 border-white/10' : 'text-slate-500 bg-slate-950/40 border-white/5'"
+                placeholder="Use el buscador de documento"
+              />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Vehículo de Interés</label>
@@ -166,7 +236,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Colaborador Asignado</label>
-              <input type="text" readonly :value="currentUser.nombre" class="w-full p-2.5 bg-slate-950/40 border border-white/5 rounded-xl text-slate-500 text-sm focus:outline-none" />
+              <input type="text" readonly :value="currentUser.nombre" class="w-full p-2.5 bg-slate-900/30 border border-white/10 rounded-xl text-slate-200 text-sm focus:outline-none cursor-not-allowed" />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Etapa Inicial</label>
@@ -189,10 +259,12 @@
         </form>
       </div>
     </div>
+    </teleport>
 
     <!-- Modal Avanzar Etapa -->
-    <div v-if="showAdvanceModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
-      <div class="w-full max-w-sm glass-panel p-6 border-slate-900/40 rounded-2xl space-y-6">
+    <teleport to="body">
+      <div v-if="showAdvanceModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-sm glass-panel p-6 border-slate-900/40 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-2 border-b border-slate-900">
           <h3 class="text-xl font-bold text-white">Actualizar Etapa</h3>
           <button @click="closeAdvanceModal" class="text-slate-400 hover:text-slate-200">
@@ -227,6 +299,7 @@
         </div>
       </div>
     </div>
+    </teleport>
   </div>
 </template>
 
@@ -234,7 +307,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { prospectoService } from '../services/prospectoService';
+import { generalesService } from '../services/generalesService';
 import { useNotification } from '../composables/useNotification';
+import { useRoute, useRouter } from 'vue-router';
+import { useSwal } from '../composables/useSwal';
 import CustomSelect from '../components/CustomSelect.vue';
 
 export default {
@@ -244,6 +320,9 @@ export default {
   setup() {
     const authStore = useAuthStore();
     const notification = useNotification();
+    const route = useRoute();
+    const router = useRouter();
+    const { confirm, confirmDelete } = useSwal();
 
     const prospectos = ref([]);
     const vehiculos = ref([]);
@@ -280,12 +359,32 @@ export default {
     const isEditing = ref(false);
     const form = ref({
       id: null,
+      tipo_documento: 'DNI',
+      documento: '',
       nombre: '',
       email: '',
       telefono: '',
       vehiculo_id: '',
       etapa: 'prospeccion',
       empleado_id: '',
+    });
+
+    const tipoDocumentoOptions = [
+      { value: 'DNI', label: 'DNI (Persona Natural)' },
+      { value: 'RUC', label: 'RUC (Persona Jurídica)' },
+      { value: 'CEX', label: 'Carnet de Extranjería (CEX)' }
+    ];
+
+    const documentoPlaceholder = computed(() => {
+      if (form.value.tipo_documento === 'DNI') return 'Ej. 73060466';
+      if (form.value.tipo_documento === 'RUC') return 'Ej. 20123456789';
+      return 'Ej. 000123456';
+    });
+
+    const documentoHint = computed(() => {
+      if (form.value.tipo_documento === 'DNI') return 'Exactamente 8 dígitos numéricos.';
+      if (form.value.tipo_documento === 'RUC') return '11 dígitos. Debe comenzar con 1 o 2.';
+      return 'Exactamente 9 caracteres. Autocompleta con ceros a la izquierda.';
     });
 
     // Modal de avance de etapa rápido
@@ -333,6 +432,8 @@ export default {
       isEditing.value = false;
       form.value = {
         id: null,
+        tipo_documento: 'DNI',
+        documento: '',
         nombre: '',
         email: '',
         telefono: '',
@@ -347,6 +448,8 @@ export default {
       isEditing.value = true;
       form.value = {
         id: p.id,
+        tipo_documento: p.tipo_documento || 'DNI',
+        documento: p.documento || '',
         nombre: p.nombre,
         email: p.email,
         telefono: p.telefono,
@@ -378,13 +481,99 @@ export default {
     };
 
     const handleDelete = async (id) => {
-      if (confirm('¿Estás seguro de eliminar este prospecto permanentemente?')) {
+      const result = await confirmDelete('¿Eliminar prospecto?', 'Esta acción aplicará un soft delete al registro del prospecto.');
+      if (result.isConfirmed) {
         try {
           await prospectoService.deleteProspecto(id);
           notification.showSuccess('Prospecto eliminado.');
           loadProspectos();
         } catch (err) {
           notification.showError(err);
+        }
+      }
+    };
+
+    const handleTipoDocumentoChange = () => {
+      form.value.documento = '';
+      form.value.nombre = '';
+      form.value.email = '';
+      form.value.telefono = '';
+    };
+
+    const buscarCliente = async () => {
+      if (!form.value.documento) {
+        notification.showError('Por favor ingrese el número de documento.');
+        return;
+      }
+
+      const rawDoc = form.value.documento.trim();
+
+      // Validar según el tipo de documento seleccionado
+      if (form.value.tipo_documento === 'DNI') {
+        const dniRegex = /^[0-9]{8}$/;
+        if (!dniRegex.test(rawDoc)) {
+          notification.showError('El DNI debe tener exactamente 8 dígitos numéricos.');
+          return;
+        }
+      } else if (form.value.tipo_documento === 'RUC') {
+        const rucRegex = /^[12][0-9]{10}$/;
+        if (!rucRegex.test(rawDoc)) {
+          notification.showError('El RUC debe tener exactamente 11 dígitos numéricos y comenzar con 1 o 2.');
+          return;
+        }
+      } else if (form.value.tipo_documento === 'CEX') {
+        // CEX puede ser alfanumérico, max 9 caracteres y se autocompleta con ceros a la izquierda
+        const cleanDoc = rawDoc.padStart(9, '0');
+        const cexRegex = /^[a-zA-Z0-9]{9}$/;
+        if (!cexRegex.test(cleanDoc)) {
+          notification.showError('El CEX debe tener un formato válido (máximo 9 caracteres alfanuméricos).');
+          return;
+        }
+        form.value.documento = cleanDoc; // Guardar el valor autocompletado
+      }
+
+      try {
+        const res = await generalesService.getClienteByDocumento(form.value.documento);
+        // Soporte de resiliencia para formato Array o un único Objeto
+        const c = Array.isArray(res) ? res[0] : res;
+
+        if (c && c.documento) {
+          // Validar que el tipo de documento del cliente encontrado coincida con el seleccionado
+          if (c.tipo_documento !== form.value.tipo_documento) {
+            notification.showError(
+              `El documento ingresado corresponde a un cliente registrado como ${c.tipo_documento}, pero has seleccionado ${form.value.tipo_documento}.`
+            );
+            return;
+          }
+
+          if (c.tipo_documento === 'RUC') {
+            form.value.nombre = c.razon_social || '';
+          } else {
+            form.value.nombre = `${c.nombre || ''} ${c.apellido || ''}`.trim();
+          }
+          form.value.email = c.email || '';
+          form.value.telefono = c.telefono || '';
+          notification.showSuccess('Cliente encontrado. Datos cargados.');
+        } else {
+          throw new Error('Cliente no registrado');
+        }
+      } catch (err) {
+        const swalRes = await confirm(
+          'Cliente no registrado',
+          `El documento "${form.value.documento}" no corresponde a ningún cliente registrado como ${form.value.tipo_documento}. ¿Deseas ser redirigido para registrarlo en el módulo de Clientes?`,
+          'Sí, registrar',
+          'Cancelar'
+        );
+        if (swalRes.isConfirmed) {
+          router.push({
+            path: '/generales/clientes',
+            query: {
+              action: 'create',
+              tipo_doc: form.value.tipo_documento,
+              doc: form.value.documento
+            }
+          });
+          showFormModal.value = false;
         }
       }
     };
@@ -415,6 +604,31 @@ export default {
     onMounted(() => {
       loadProspectos();
       loadVehiculos();
+
+      // Detectar redirección de retorno con cliente recién registrado
+      if (route.query.autofill_doc) {
+        isEditing.value = false;
+        form.value = {
+          id: null,
+          tipo_documento: 'DNI',
+          documento: route.query.autofill_doc,
+          nombre: '',
+          email: '',
+          telefono: '',
+          vehiculo_id: '',
+          etapa: 'prospeccion',
+          empleado_id: currentUser.value.id,
+        };
+        showFormModal.value = true;
+
+        // Limpiar query params de la URL sin recargar
+        router.replace({ path: '/prospectos' });
+
+        // Ejecutar búsqueda automática del cliente recién creado
+        setTimeout(() => {
+          buscarCliente();
+        }, 300);
+      }
     });
 
     return {
@@ -436,6 +650,8 @@ export default {
       closeFormModal,
       saveProspecto,
       handleDelete,
+      buscarCliente,
+      handleTipoDocumentoChange,
       
       // Advance Modal
       showAdvanceModal,
@@ -447,6 +663,9 @@ export default {
       // Select options
       vehiculosOptions,
       etapaOptions,
+      tipoDocumentoOptions,
+      documentoPlaceholder,
+      documentoHint
     };
   },
 };

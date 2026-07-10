@@ -104,6 +104,14 @@ export const generalesService = {
       throw error.response?.data?.message || 'Error al obtener clientes';
     }
   },
+  async getClienteByDocumento(documento) {
+    try {
+      const response = await generalesRepository.getClienteByDocumento(documento);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Error al buscar cliente por documento';
+    }
+  },
   async getCliente(id) {
     try {
       const response = await generalesRepository.getCliente(id);

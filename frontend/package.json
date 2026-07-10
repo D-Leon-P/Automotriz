@@ -12,6 +12,7 @@
     "@fortawesome/fontawesome-free": "^7.3.0",
     "axios": "^1.18.1",
     "pinia": "^3.0.4",
+    "sweetalert2": "^11.26.25",
     "vue": "^3.5.39",
     "vue-router": "^5.1.0"
   },

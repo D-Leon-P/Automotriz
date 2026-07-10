@@ -44,6 +44,9 @@ export const generalesRepository = {
   getClientes() {
     return apiClient.get('/clientes');
   },
+  getClienteByDocumento(documento) {
+    return apiClient.get('/clientes', { params: { documento } });
+  },
   getCliente(id) {
     return apiClient.get(`/clientes/${id}`);
   },

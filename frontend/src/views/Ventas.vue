@@ -89,8 +89,9 @@
     </div>
 
     <!-- Modal Registrar Cierre/Venta -->
-    <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
-      <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
+    <teleport to="body">
+      <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-4 border-b border-white/5">
           <h3 class="text-xl font-bold text-white">Registrar Venta / Cierre</h3>
           <button @click="closeFormModal" class="text-slate-400 hover:text-slate-200">
@@ -159,6 +160,7 @@
         </form>
       </div>
     </div>
+    </teleport>
   </div>
 </template>
 

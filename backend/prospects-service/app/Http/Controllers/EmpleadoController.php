@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empleado;
+use App\Models\Prospecto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -95,19 +96,31 @@ class EmpleadoController extends Controller
     {
         $empleado = Empleado::findOrFail($id);
 
-        // Evitar auto-eliminación
+        // Evitar auto-desactivación
         if (auth()->id() == $id) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'No puedes eliminar tu propia cuenta de colaborador.'
+                'message' => 'No puedes desactivar tu propia cuenta de colaborador.'
             ], 400);
+        }
+
+        // Impedir desactivación si tiene prospectos activos (etapa diferente a 'cierre')
+        $activeProspectsCount = Prospecto::where('empleado_id', $id)
+            ->where('etapa', '!=', 'cierre')
+            ->count();
+
+        if ($activeProspectsCount > 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No se puede desactivar al colaborador porque tiene ' . $activeProspectsCount . ' prospectos activos asignados. Reasigne sus prospectos antes de desactivar.'
+            ], 422);
         }
 
         $empleado->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Colaborador eliminado exitosamente (soft delete).'
+            'message' => 'Colaborador desactivado exitosamente (soft delete).'
         ]);
     }
 }

@@ -72,6 +72,15 @@ class ProspectoController extends Controller
         
         $empleadoId = $user->hasPermission('gestionar_prospectos_todos') ? null : $user->id;
 
+        // Impedir modificación si el prospecto ya está en etapa final de cierre (Venta Efectiva/Fallida)
+        $prospectoExistente = $this->prospectoService->getProspectoById($id, $empleadoId);
+        if ($prospectoExistente && $prospectoExistente->etapa === 'cierre') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No se puede modificar un prospecto que ya se encuentra en la etapa de Cierre.'
+            ], 422);
+        }
+
         try {
             $prospecto = $this->prospectoService->updateProspecto($id, $validated, $empleadoId);
             return response()->json([
@@ -91,6 +100,16 @@ class ProspectoController extends Controller
     {
         $user = Auth::user();
         $empleadoId = $user->hasPermission('gestionar_prospectos_todos') ? null : $user->id;
+
+        // Impedir eliminación si el prospecto ya está en etapa final de cierre (Venta Efectiva/Fallida)
+        $prospectoExistente = $this->prospectoService->getProspectoById($id, $empleadoId);
+        if ($prospectoExistente && $prospectoExistente->etapa === 'cierre') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No se puede eliminar un prospecto que ya se encuentra en la etapa de Cierre.'
+            ], 422);
+        }
+        
         $deleted = $this->prospectoService->deleteProspecto($id, $empleadoId);
         
         if (!$deleted) {

@@ -18,6 +18,11 @@ class ClienteService
         return $this->clienteRepository->all();
     }
 
+    public function getClienteByDocumento($documento)
+    {
+        return $this->clienteRepository->findByDocumento($documento);
+    }
+
     public function getClienteById($id)
     {
         return $this->clienteRepository->find($id);

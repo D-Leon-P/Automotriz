@@ -98,8 +98,9 @@
     </div>
 
     <!-- Modal Formulario -->
-    <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
-      <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
+    <teleport to="body">
+      <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-4 border-b border-white/5">
           <h3 class="text-xl font-bold text-white">
             {{ isEditing ? 'Editar Cliente' : 'Registrar Cliente' }}
@@ -108,7 +109,7 @@
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>
-        <form @submit.prevent="saveCliente" class="space-y-4">
+        <form @submit.prevent="saveCliente" novalidate class="space-y-4">
           <!-- Tipo de Documento y Número de Documento -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -149,7 +150,13 @@
 
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Fecha Nacimiento</label>
-              <input v-model="form.fecha_nacimiento" type="date" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <input 
+                v-model="form.fecha_nacimiento" 
+                type="date" 
+                :min="minBirthDate" 
+                :max="maxBirthDate"
+                class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" 
+              />
             </div>
           </div>
 
@@ -191,6 +198,7 @@
         </form>
       </div>
     </div>
+    </teleport>
   </div>
 </template>
 
@@ -200,6 +208,8 @@ import { useAuthStore } from '../../stores/auth';
 import { generalesService } from '../../services/generalesService';
 import { useNotification } from '../../composables/useNotification';
 import CustomSelect from '../../components/CustomSelect.vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useSwal } from '../../composables/useSwal';
 
 export default {
   name: 'Clientes',
@@ -209,6 +219,9 @@ export default {
   setup() {
     const authStore = useAuthStore();
     const notification = useNotification();
+    const route = useRoute();
+    const router = useRouter();
+    const { confirmDelete } = useSwal();
 
     const clientes = ref([]);
     const loading = ref(false);
@@ -305,6 +318,26 @@ export default {
         return;
       }
 
+      // Validar edad si es DNI o CEX y hay fecha de nacimiento
+      if ((form.value.tipo_documento === 'DNI' || form.value.tipo_documento === 'CEX') && form.value.fecha_nacimiento) {
+        const birth = new Date(form.value.fecha_nacimiento);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+          age--;
+        }
+
+        if (age < 18) {
+          notification.showError('El cliente debe ser mayor de edad (mínimo 18 años).');
+          return;
+        }
+        if (age > 90) {
+          notification.showError('El cliente no puede tener más de 90 años.');
+          return;
+        }
+      }
+
       // Si es CEX y tiene texto, auto-completar con ceros a la izquierda hasta 9 caracteres
       if (form.value.tipo_documento === 'CEX' && form.value.documento) {
         form.value.documento = form.value.documento.trim().padStart(9, '0');
@@ -315,8 +348,18 @@ export default {
           await generalesService.updateCliente(form.value.id, form.value);
           notification.showSuccess('Cliente actualizado exitosamente.');
         } else {
-          await generalesService.createCliente(form.value);
+          const res = await generalesService.createCliente(form.value);
           notification.showSuccess('Cliente registrado exitosamente.');
+
+          // Si provino del flujo de prospectos, redirigimos de regreso con el documento
+          if (route.query.action === 'create') {
+            router.push({
+              path: '/prospectos',
+              query: { autofill_doc: res.data?.documento || form.value.documento }
+            });
+            showFormModal.value = false;
+            return;
+          }
         }
         showFormModal.value = false;
         loadClientes();
@@ -326,7 +369,8 @@ export default {
     };
 
     const handleDelete = async (id) => {
-      if (confirm('¿Estás seguro de que deseas eliminar este cliente? (Se aplicará soft delete)')) {
+      const result = await confirmDelete('¿Eliminar cliente?', 'Esta acción aplicará un soft delete al registro del cliente.');
+      if (result.isConfirmed) {
         try {
           await generalesService.deleteCliente(id);
           notification.showSuccess('Cliente eliminado exitosamente.');
@@ -360,8 +404,38 @@ export default {
       return `${age} años`;
     };
 
+    const minBirthDate = computed(() => {
+      const today = new Date();
+      today.setFullYear(today.getFullYear() - 90);
+      return today.toISOString().split('T')[0];
+    });
+
+    const maxBirthDate = computed(() => {
+      const today = new Date();
+      today.setFullYear(today.getFullYear() - 18);
+      return today.toISOString().split('T')[0];
+    });
+
     onMounted(() => {
       loadClientes();
+
+      // Detectar si se solicita la creación automática de cliente desde prospectos
+      if (route.query.action === 'create') {
+        isEditing.value = false;
+        form.value = {
+          id: null,
+          tipo_documento: route.query.tipo_doc || 'DNI',
+          nombre: '',
+          apellido: '',
+          documento: route.query.doc || '',
+          fecha_nacimiento: '',
+          razon_social: '',
+          email: '',
+          telefono: '',
+          direccion: ''
+        };
+        showFormModal.value = true;
+      }
     });
 
     return {
@@ -380,7 +454,9 @@ export default {
       calculateAge,
       tipoDocumentoOptions,
       documentoPlaceholder,
-      documentoHint
+      documentoHint,
+      minBirthDate,
+      maxBirthDate
     };
   }
 };

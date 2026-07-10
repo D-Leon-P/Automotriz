@@ -74,11 +74,11 @@
               </button>
               <button
                 v-if="currentUser.id !== e.id"
-                @click="handleDelete(e.id)"
-                v-title.right="'Eliminar colaborador'"
+                @click="handleDeactivate(e.id)"
+                v-title.right="'Desactivar colaborador'"
                 class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
               >
-                <i class="fas fa-trash-alt text-xs"></i>
+                <i class="fas fa-user-slash text-xs"></i>
               </button>
             </td>
           </tr>
@@ -87,8 +87,9 @@
     </div>
 
     <!-- Modal Formulario -->
-    <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
-      <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
+    <teleport to="body">
+      <div v-if="showFormModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="w-full max-w-lg glass-panel p-6 sm:p-8 rounded-2xl space-y-6">
         <div class="flex justify-between items-center pb-4 border-b border-white/5">
           <h3 class="text-xl font-bold text-white">
             {{ isEditing ? 'Editar Colaborador' : 'Registrar Colaborador' }}
@@ -138,6 +139,7 @@
         </form>
       </div>
     </div>
+    </teleport>
   </div>
 </template>
 
@@ -146,6 +148,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { generalesService } from '../../services/generalesService';
 import { useNotification } from '../../composables/useNotification';
+import { useSwal } from '../../composables/useSwal';
 import CustomSelect from '../../components/CustomSelect.vue';
 
 export default {
@@ -156,6 +159,7 @@ export default {
   setup() {
     const authStore = useAuthStore();
     const notification = useNotification();
+    const { confirmDelete } = useSwal();
 
     const empleados = ref([]);
     const roles = ref([]);
@@ -242,11 +246,15 @@ export default {
       }
     };
 
-    const handleDelete = async (id) => {
-      if (confirm('¿Estás seguro de que deseas eliminar este colaborador? (Se aplicará soft delete)')) {
+    const handleDeactivate = async (id) => {
+      const result = await confirmDelete(
+        '¿Desactivar colaborador?',
+        'El colaborador ya no podrá ingresar al sistema y sus sesiones activas finalizarán de inmediato.'
+      );
+      if (result.isConfirmed) {
         try {
           await generalesService.deleteEmpleado(id);
-          notification.showSuccess('Colaborador eliminado exitosamente.');
+          notification.showSuccess('Colaborador desactivado exitosamente.');
           loadData();
         } catch (err) {
           notification.showError(err);
@@ -281,7 +289,7 @@ export default {
       openEditModal,
       closeFormModal,
       saveEmpleado,
-      handleDelete,
+      handleDeactivate,
       formatDate
     };
   }
