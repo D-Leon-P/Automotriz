@@ -38,7 +38,7 @@
             <th class="p-4 pl-6">Documento (DNI/RUC)</th>
             <th class="p-4">Nombre y Apellido</th>
             <th class="p-4">Razón Social</th>
-            <th class="p-4">Edad</th>
+            <th class="p-4">F. Nacimiento</th>
             <th class="p-4">Contacto</th>
             <th class="p-4">Dirección</th>
             <th v-if="canManage" class="p-4 pr-6 text-right">Acciones</th>
@@ -46,10 +46,23 @@
         </thead>
         <tbody class="divide-y divide-white/5">
           <tr v-for="c in clientes" :key="c.id" class="hover:bg-slate-900/20 transition-colors duration-200 text-sm">
-            <td class="p-4 pl-6 font-mono text-slate-300 font-bold">{{ c.documento }}</td>
-            <td class="p-4 text-slate-200 font-semibold">{{ c.nombre }} {{ c.apellido }}</td>
+            <td class="p-4 pl-6 font-mono text-slate-300 font-bold">
+              <div class="flex flex-col gap-0.5">
+                <span>{{ c.documento }}</span>
+                <span class="text-[10px] text-amber-500 font-extrabold uppercase tracking-wider leading-none">{{ c.tipo_documento }}</span>
+              </div>
+            </td>
+            <td class="p-4 text-slate-200 font-semibold">
+              {{ c.nombre || c.apellido ? `${c.nombre || ''} ${c.apellido || ''}`.trim() : '-' }}
+            </td>
             <td class="p-4 text-slate-300">{{ c.razon_social || '-' }}</td>
-            <td class="p-4 text-slate-400">{{ c.edad || '-' }}</td>
+            <td class="p-4 text-slate-300">
+              <div v-if="c.tipo_documento !== 'RUC' && c.fecha_nacimiento" class="flex flex-col gap-0.5">
+                <span class="text-slate-200 font-semibold">{{ formatDate(c.fecha_nacimiento) }}</span>
+                <span class="text-[10px] text-slate-500 font-medium">{{ calculateAge(c.fecha_nacimiento) }}</span>
+              </div>
+              <span v-else class="text-slate-500">-</span>
+            </td>
             <td class="p-4 text-slate-300">
               <div class="flex flex-col gap-0.5">
                 <span v-if="c.email" class="text-xs flex items-center gap-1.5 text-slate-400">
@@ -95,35 +108,58 @@
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>
-
         <form @submit.prevent="saveCliente" class="space-y-4">
+          <!-- Tipo de Documento y Número de Documento -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nombre</label>
-              <input v-model="form.nombre" type="text" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Tipo Documento</label>
+              <CustomSelect
+                v-model="form.tipo_documento"
+                :options="tipoDocumentoOptions"
+                placeholder="Seleccionar tipo..."
+              />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Apellido</label>
-              <input v-model="form.apellido" type="text" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nº Documento</label>
+              <input
+                v-model="form.documento"
+                type="text"
+                required
+                class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300"
+                :placeholder="documentoPlaceholder"
+              />
+              <p class="text-[10px] text-slate-500 mt-1 font-medium leading-normal">
+                {{ documentoHint }}
+              </p>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">DNI / RUC</label>
-              <input v-model="form.documento" type="text" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+          <!-- Campos para DNI y CEX -->
+          <div v-if="form.tipo_documento === 'DNI' || form.tipo_documento === 'CEX'" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Nombre</label>
+                <input v-model="form.nombre" type="text" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Apellido</label>
+                <input v-model="form.apellido" type="text" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              </div>
             </div>
+
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Edad</label>
-              <input v-model="form.edad" type="number" min="18" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Fecha Nacimiento</label>
+              <input v-model="form.fecha_nacimiento" type="date" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
           </div>
 
-          <div>
+          <!-- Campos para RUC -->
+          <div v-if="form.tipo_documento === 'RUC'">
             <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Razón Social</label>
-            <input v-model="form.razon_social" type="text" placeholder="Solo para personas jurídicas" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+            <input v-model="form.razon_social" type="text" placeholder="Nombre o Razón Social de la empresa" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
           </div>
 
+          <!-- Correo y Teléfono (Comunes con advertencia) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Email</label>
@@ -134,7 +170,11 @@
               <input v-model="form.telefono" type="text" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
             </div>
           </div>
+          <p class="text-[10px] text-amber-500/80 font-medium leading-none mt-1">
+            * Debe registrar obligatoriamente al menos el correo electrónico o el teléfono.
+          </p>
 
+          <!-- Dirección -->
           <div>
             <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Dirección</label>
             <input v-model="form.direccion" type="text" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
@@ -159,9 +199,13 @@ import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { generalesService } from '../../services/generalesService';
 import { useNotification } from '../../composables/useNotification';
+import CustomSelect from '../../components/CustomSelect.vue';
 
 export default {
   name: 'Clientes',
+  components: {
+    CustomSelect
+  },
   setup() {
     const authStore = useAuthStore();
     const notification = useNotification();
@@ -174,14 +218,33 @@ export default {
     const isEditing = ref(false);
     const form = ref({
       id: null,
+      tipo_documento: 'DNI',
       nombre: '',
       apellido: '',
       documento: '',
-      edad: '',
+      fecha_nacimiento: '',
       razon_social: '',
       email: '',
       telefono: '',
       direccion: ''
+    });
+
+    const tipoDocumentoOptions = [
+      { value: 'DNI', label: 'DNI (Persona Natural)' },
+      { value: 'RUC', label: 'RUC (Persona Jurídica)' },
+      { value: 'CEX', label: 'Carnet de Extranjería (CEX)' }
+    ];
+
+    const documentoPlaceholder = computed(() => {
+      if (form.value.tipo_documento === 'DNI') return 'Ej. 73060466';
+      if (form.value.tipo_documento === 'RUC') return 'Ej. 20123456789';
+      return 'Ej. 000123456';
+    });
+
+    const documentoHint = computed(() => {
+      if (form.value.tipo_documento === 'DNI') return 'Exactamente 8 dígitos numéricos.';
+      if (form.value.tipo_documento === 'RUC') return '11 dígitos. Debe comenzar con 1 o 2.';
+      return 'Exactamente 9 caracteres. Autocompleta con ceros a la izquierda.';
     });
 
     const canManage = computed(() => authStore.hasPermission('gestionar_clientes'));
@@ -201,10 +264,11 @@ export default {
       isEditing.value = false;
       form.value = {
         id: null,
+        tipo_documento: 'DNI',
         nombre: '',
         apellido: '',
         documento: '',
-        edad: '',
+        fecha_nacimiento: '',
         razon_social: '',
         email: '',
         telefono: '',
@@ -215,7 +279,18 @@ export default {
 
     const openEditModal = (c) => {
       isEditing.value = true;
-      form.value = { ...c };
+      form.value = {
+        id: c.id,
+        tipo_documento: c.tipo_documento || 'DNI',
+        nombre: c.nombre || '',
+        apellido: c.apellido || '',
+        documento: c.documento || '',
+        fecha_nacimiento: c.fecha_nacimiento || '',
+        razon_social: c.razon_social || '',
+        email: c.email || '',
+        telefono: c.telefono || '',
+        direccion: c.direccion || ''
+      };
       showFormModal.value = true;
     };
 
@@ -224,6 +299,17 @@ export default {
     };
 
     const saveCliente = async () => {
+      // Validar que exista al menos email o telefono en el frontend antes de enviar
+      if (!form.value.email && !form.value.telefono) {
+        notification.showError('Debe ingresar al menos un correo electrónico o un teléfono de contacto.');
+        return;
+      }
+
+      // Si es CEX y tiene texto, auto-completar con ceros a la izquierda hasta 9 caracteres
+      if (form.value.tipo_documento === 'CEX' && form.value.documento) {
+        form.value.documento = form.value.documento.trim().padStart(9, '0');
+      }
+
       try {
         if (isEditing.value) {
           await generalesService.updateCliente(form.value.id, form.value);
@@ -251,6 +337,29 @@ export default {
       }
     };
 
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC'
+      });
+    };
+
+    const calculateAge = (dateStr) => {
+      if (!dateStr) return '';
+      const birth = new Date(dateStr);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      return `${age} años`;
+    };
+
     onMounted(() => {
       loadClientes();
     });
@@ -266,7 +375,12 @@ export default {
       openEditModal,
       closeFormModal,
       saveCliente,
-      handleDelete
+      handleDelete,
+      formatDate,
+      calculateAge,
+      tipoDocumentoOptions,
+      documentoPlaceholder,
+      documentoHint
     };
   }
 };

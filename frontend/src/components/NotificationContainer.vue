@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full">
+  <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-md w-full">
     <transition-group name="notification">
       <div
         v-for="n in notifications"

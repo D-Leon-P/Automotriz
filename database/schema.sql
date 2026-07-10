@@ -112,13 +112,14 @@ CREATE TABLE IF NOT EXISTS seguros (
 -- 6. Tabla de Clientes
 CREATE TABLE IF NOT EXISTS clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL,
-    apellido VARCHAR(50) NOT NULL,
+    tipo_documento ENUM('DNI', 'RUC', 'CEX') NOT NULL DEFAULT 'DNI',
+    nombre VARCHAR(50) NULL,
+    apellido VARCHAR(50) NULL,
     razon_social VARCHAR(150) NULL,
-    edad INT NULL,
+    fecha_nacimiento DATE NULL,
     email VARCHAR(100) NULL UNIQUE,
     telefono VARCHAR(20) NULL,
-    documento VARCHAR(20) NOT NULL UNIQUE, -- DNI o RUC
+    documento VARCHAR(20) NOT NULL UNIQUE, -- DNI, RUC o CEX
     direccion VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

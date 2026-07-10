@@ -37,15 +37,48 @@ class ClienteController extends Controller
 
     public function store(Request $request)
     {
+        $tipo = $request->tipo_documento;
+        $doc = $request->documento;
+
+        if ($tipo === 'DNI') {
+            if (!preg_match('/^[0-9]{8}$/', $doc)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'El DNI debe tener exactamente 8 dígitos numéricos.'
+                ], 422);
+            }
+        } elseif ($tipo === 'RUC') {
+            if (!preg_match('/^[12][0-9]{10}$/', $doc)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'El RUC debe comenzar con 1 o 2 y tener exactamente 11 dígitos numéricos.'
+                ], 422);
+            }
+        } elseif ($tipo === 'CEX') {
+            $doc = str_pad($doc, 9, '0', STR_PAD_LEFT);
+            if (!preg_match('/^[a-zA-Z0-9]{9}$/', $doc)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'El CEX debe tener exactamente 9 caracteres alfanuméricos.'
+                ], 422);
+            }
+            $request->merge(['documento' => $doc]);
+        }
+
         $validated = $request->validate([
-            'nombre' => 'required|string|max:50',
-            'apellido' => 'required|string|max:50',
+            'tipo_documento' => 'required|in:DNI,RUC,CEX',
+            'nombre' => 'nullable|string|max:50',
+            'apellido' => 'nullable|string|max:50',
             'razon_social' => 'nullable|string|max:150',
-            'edad' => 'nullable|integer|min:18',
-            'email' => 'nullable|email|max:100|unique:clientes,email',
-            'telefono' => 'nullable|string|max:20',
+            'fecha_nacimiento' => 'nullable|date|before_or_equal:' . now()->subYears(18)->format('Y-m-d'),
+            'email' => 'required_without:telefono|nullable|email|max:100|unique:clientes,email',
+            'telefono' => 'required_without:email|nullable|string|max:20',
             'documento' => 'required|string|max:20|unique:clientes,documento',
             'direccion' => 'nullable|string|max:255',
+        ], [
+            'email.required_without' => 'Debe registrar al menos un correo electrónico o un teléfono de contacto.',
+            'telefono.required_without' => 'Debe registrar al menos un correo electrónico o un teléfono de contacto.',
+            'fecha_nacimiento.before_or_equal' => 'El cliente debe ser mayor de edad (mínimo 18 años).'
         ]);
 
         try {
@@ -65,15 +98,48 @@ class ClienteController extends Controller
 
     public function update(Request $request, $id)
     {
+        $tipo = $request->tipo_documento;
+        $doc = $request->documento;
+
+        if ($tipo === 'DNI') {
+            if (!preg_match('/^[0-9]{8}$/', $doc)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'El DNI debe tener exactamente 8 dígitos numéricos.'
+                ], 422);
+            }
+        } elseif ($tipo === 'RUC') {
+            if (!preg_match('/^[12][0-9]{10}$/', $doc)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'El RUC debe comenzar con 1 o 2 y tener exactamente 11 dígitos numéricos.'
+                ], 422);
+            }
+        } elseif ($tipo === 'CEX') {
+            $doc = str_pad($doc, 9, '0', STR_PAD_LEFT);
+            if (!preg_match('/^[a-zA-Z0-9]{9}$/', $doc)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'El CEX debe tener exactamente 9 caracteres alfanuméricos.'
+                ], 422);
+            }
+            $request->merge(['documento' => $doc]);
+        }
+
         $validated = $request->validate([
-            'nombre' => 'required|string|max:50',
-            'apellido' => 'required|string|max:50',
+            'tipo_documento' => 'required|in:DNI,RUC,CEX',
+            'nombre' => 'nullable|string|max:50',
+            'apellido' => 'nullable|string|max:50',
             'razon_social' => 'nullable|string|max:150',
-            'edad' => 'nullable|integer|min:18',
-            'email' => 'nullable|email|max:100|unique:clientes,email,' . $id,
-            'telefono' => 'nullable|string|max:20',
+            'fecha_nacimiento' => 'nullable|date|before_or_equal:' . now()->subYears(18)->format('Y-m-d'),
+            'email' => 'required_without:telefono|nullable|email|max:100|unique:clientes,email,' . $id,
+            'telefono' => 'required_without:email|nullable|string|max:20',
             'documento' => 'required|string|max:20|unique:clientes,documento,' . $id,
             'direccion' => 'nullable|string|max:255',
+        ], [
+            'email.required_without' => 'Debe registrar al menos un correo electrónico o un teléfono de contacto.',
+            'telefono.required_without' => 'Debe registrar al menos un correo electrónico o un teléfono de contacto.',
+            'fecha_nacimiento.before_or_equal' => 'El cliente debe ser mayor de edad (mínimo 18 años).'
         ]);
 
         try {

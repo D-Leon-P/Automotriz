@@ -12,13 +12,18 @@ class Cliente extends Model
     protected $table = 'clientes';
 
     protected $fillable = [
+        'tipo_documento',
         'nombre',
         'apellido',
         'razon_social',
-        'edad',
+        'fecha_nacimiento',
         'email',
         'telefono',
         'documento',
         'direccion',
+    ];
+
+    protected $casts = [
+        'fecha_nacimiento' => 'date',
     ];
 }
