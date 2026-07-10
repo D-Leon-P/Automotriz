@@ -236,7 +236,19 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Colaborador Asignado</label>
-              <input type="text" readonly :value="currentUser.nombre" class="w-full p-2.5 bg-slate-900/30 border border-white/10 rounded-xl text-slate-200 text-sm focus:outline-none cursor-not-allowed" />
+              <CustomSelect
+                v-if="isAdmin"
+                v-model="form.empleado_id"
+                :options="empleadosOptions"
+                placeholder="Seleccione un colaborador..."
+              />
+              <input
+                v-else
+                type="text"
+                readonly
+                :value="assignedEmpleadoName"
+                class="w-full p-2.5 bg-slate-900/30 border border-white/10 rounded-xl text-slate-200 text-sm focus:outline-none cursor-not-allowed"
+              />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Etapa Inicial</label>
@@ -326,8 +338,9 @@ export default {
 
     const prospectos = ref([]);
     const vehiculos = ref([]);
+    const empleados = ref([]);
     const loading = ref(false);
-    
+
     // Filtros
     const activeFilter = ref('todos');
     const filters = [
@@ -345,6 +358,25 @@ export default {
         value: v.id,
         label: `${v.marca} ${v.modelo} (${v.anio}) - S/ ${parseFloat(v.precio).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
       }));
+    });
+
+    const empleadosOptions = computed(() => {
+      return empleados.value.map(e => ({
+        value: e.id,
+        label: e.nombre
+      }));
+    });
+
+    const isAdmin = computed(() => {
+      return currentUser.value && currentUser.value.rol && currentUser.value.rol.nombre === 'administrador';
+    });
+
+    const assignedEmpleadoName = computed(() => {
+      if (isEditing.value && form.value.empleado_id) {
+        const emp = empleados.value.find(e => e.id === form.value.empleado_id);
+        if (emp) return emp.nombre;
+      }
+      return currentUser.value ? currentUser.value.nombre : '';
     });
 
     const etapaOptions = [
@@ -407,6 +439,16 @@ export default {
         vehiculos.value = await prospectoService.getVehiculos();
       } catch (err) {
         notification.showError(err);
+      }
+    };
+
+    const loadEmpleados = async () => {
+      if (isAdmin.value || (currentUser.value && currentUser.value.permissions?.includes('ver_empleados'))) {
+        try {
+          empleados.value = await generalesService.getEmpleados();
+        } catch (err) {
+          console.error('Error al cargar colaboradores:', err);
+        }
       }
     };
 
@@ -604,6 +646,7 @@ export default {
     onMounted(() => {
       loadProspectos();
       loadVehiculos();
+      loadEmpleados();
 
       // Detectar redirección de retorno con cliente recién registrado
       if (route.query.autofill_doc) {
@@ -665,7 +708,10 @@ export default {
       etapaOptions,
       tipoDocumentoOptions,
       documentoPlaceholder,
-      documentoHint
+      documentoHint,
+      empleadosOptions,
+      isAdmin,
+      assignedEmpleadoName
     };
   },
 };
