@@ -159,4 +159,120 @@ class SecuritySanitizationTest extends TestCase
         // Verificar que no se expone el access_token en el cuerpo JSON por seguridad
         $response->assertJsonMissing(['access_token']);
     }
+
+    /** @test */
+    public function endpoint_alertas_inactividad_procesa_datos_con_token_valido()
+    {
+        $payload = [
+            'prospectos' => [
+                [
+                    'id' => 10,
+                    'nombre' => 'Prospecto Inactivo Test',
+                    'email' => 'inactivo@test.com',
+                    'telefono' => '999888777',
+                    'etapa' => 'calificacion',
+                    'updated_at' => '2026-07-01 10:00:00',
+                    'vendedor_nombre' => 'Asesor Alfa',
+                    'vendedor_email' => 'alfa@automotriz.com'
+                ]
+            ]
+        ];
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer internal_n8n_system_token'
+        ])->postJson('/api/alertas/inactividad', $payload);
+
+        $response->assertStatus(200);
+        $response->assertJsonFragment([
+            'status' => 'success',
+            'message' => 'Alertas de inactividad procesadas exitosamente.',
+            'alertas_procesadas' => 1
+        ]);
+    }
+
+    /** @test */
+    public function endpoint_alertas_inactividad_falla_sin_token_valido()
+    {
+        $payload = [
+            'prospectos' => []
+        ];
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer token_invalido_hacker'
+        ])->postJson('/api/alertas/inactividad', $payload);
+
+        $response->assertStatus(401);
+        $response->assertJsonFragment([
+            'status' => 'error',
+            'message' => 'No autorizado. Token de sistema inválido.'
+        ]);
+    }
+
+    /** @test */
+    public function endpoint_prospectos_inactivos_retorna_lista_correcta_con_token_valido()
+    {
+        // Crear un prospecto antiguo / inactivo (actualizado hace 6 días)
+        $prospectoInactivo = Prospecto::create([
+            'nombre' => 'Prospecto Viejo',
+            'email' => 'viejo@example.com',
+            'telefono' => '123456789',
+            'vehiculo_id' => $this->vehiculo->id,
+            'etapa' => 'prospeccion',
+            'empleado_id' => $this->vendedor1->id
+        ]);
+        
+        $prospectoInactivo->timestamps = false;
+        $prospectoInactivo->updated_at = now()->subDays(6);
+        $prospectoInactivo->save();
+
+        // Crear un prospecto reciente (actualizado hoy)
+        $prospectoReciente = Prospecto::create([
+            'nombre' => 'Prospecto Nuevo',
+            'email' => 'nuevo@example.com',
+            'telefono' => '987654321',
+            'vehiculo_id' => $this->vehiculo->id,
+            'etapa' => 'prospeccion',
+            'empleado_id' => $this->vendedor1->id
+        ]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer internal_n8n_system_token'
+        ])->getJson('/api/prospectos/inactivos?dias=5');
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'length',
+            'prospectos' => [
+                '*' => [
+                    'id',
+                    'nombre',
+                    'email',
+                    'telefono',
+                    'etapa',
+                    'updated_at',
+                    'vendedor_nombre',
+                    'vendedor_email'
+                ]
+            ]
+        ]);
+
+        // Debe contener el inactivo y NO el reciente
+        $this->assertTrue(collect($response->json('prospectos'))->contains('id', $prospectoInactivo->id));
+        $this->assertFalse(collect($response->json('prospectos'))->contains('id', $prospectoReciente->id));
+    }
+
+    /** @test */
+    public function endpoint_prospectos_inactivos_falla_sin_token_valido()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer token_invalido_hacker'
+        ])->getJson('/api/prospectos/inactivos');
+
+        $response->assertStatus(401);
+        $response->assertJsonFragment([
+            'status' => 'error',
+            'message' => 'No autorizado. Token de sistema inválido.'
+        ]);
+    }
 }
+
