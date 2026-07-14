@@ -1,8 +1,12 @@
 import apiClient from './apiClient';
 
 export const prospectoRepository = {
-  getAll() {
-    return apiClient.get('/prospectos');
+  getAll(showDeleted = false) {
+    return apiClient.get('/prospectos', { params: { show_deleted: showDeleted } });
+  },
+
+  restore(id) {
+    return apiClient.post(`/prospectos/${id}/restore`);
   },
 
   getById(id) {

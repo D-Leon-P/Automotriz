@@ -16,11 +16,12 @@
     </div>
 
     <!-- Filtros por Etapa -->
-    <div class="flex flex-wrap gap-2 pb-2">
-      <button
-        v-for="filter in filters"
-        :key="filter.value"
-        @click="activeFilter = filter.value"
+    <div class="flex flex-wrap items-center justify-between gap-4 pb-2">
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="filter in filters"
+          :key="filter.value"
+          @click="activeFilter = filter.value"
         :class="[
           'px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition-all duration-200',
           activeFilter === filter.value
@@ -29,7 +30,19 @@
         ]"
       >
         {{ filter.label }}
-      </button>
+        </button>
+      </div>
+
+      <!-- Toggle Mostrar Eliminados -->
+      <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200 cursor-pointer select-none">
+        <input 
+          v-model="showDeleted" 
+          type="checkbox" 
+          class="w-4 h-4 rounded border-white/5 bg-slate-900/20 text-amber-500 focus:ring-amber-500/30"
+          @change="loadProspectos"
+        />
+          <span>Mostrar eliminados</span>
+      </label>
     </div>
 
     <!-- Spinner / Vacío / Tabla -->
@@ -60,8 +73,20 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
-          <tr v-for="p in filteredProspectos" :key="p.id" class="hover:bg-slate-900/20 transition-colors duration-200 text-sm">
-            <td class="p-4 pl-6 font-bold text-slate-200">{{ p.nombre }}</td>
+          <tr 
+            v-for="p in filteredProspectos" 
+            :key="p.id" 
+            :class="[
+              'hover:bg-slate-900/20 transition-colors duration-200 text-sm', 
+              p.deleted_at ? 'opacity-40 bg-slate-950/20' : ''
+            ]"
+          >
+            <td class="p-4 pl-6 font-bold text-slate-200">
+              <div class="flex items-center gap-1.5">
+                <span>{{ p.nombre }}</span>
+                <span v-if="p.deleted_at" class="text-[9px] bg-red-500/10 border border-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Eliminado</span>
+              </div>
+            </td>
             <td class="p-4 text-slate-300">
               <div class="flex flex-col">
                 <span class="flex items-center gap-1.5"><i class="fas fa-envelope text-slate-500 text-xs"></i> {{ p.email }}</span>
@@ -81,17 +106,29 @@
               <span
                 :class="[
                   'px-3 py-1 rounded-full text-xs font-bold capitalize border inline-block',
-                  p.etapa === 'prospeccion' && 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-                  p.etapa === 'calificacion' && 'bg-purple-500/10 border-purple-500/20 text-purple-400',
-                  p.etapa === 'negociacion' && 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400',
-                  p.etapa === 'cierre' && 'bg-green-500/10 border-green-500/20 text-green-400',
+                  p.deleted_at ? 'bg-slate-500/10 border-slate-500/20 text-slate-500' : '',
+                  (!p.deleted_at && p.etapa === 'prospeccion') ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : '',
+                  (!p.deleted_at && p.etapa === 'calificacion') ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' : '',
+                  (!p.deleted_at && p.etapa === 'negociacion') ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' : '',
+                  (!p.deleted_at && p.etapa === 'cierre') ? 'bg-green-500/10 border-green-500/20 text-green-400' : '',
                 ]"
               >
-                {{ formatEtapa(p.etapa) }}
+                {{ p.deleted_at ? 'Eliminado' : formatEtapa(p.etapa) }}
               </span>
             </td>
-            <td class="p-4 pr-6 text-right space-x-2">
-              <template v-if="p.etapa !== 'cierre'">
+            <td class="p-4 pr-6 text-right space-x-2 whitespace-nowrap">
+              <!-- Si está eliminado -->
+              <template v-if="p.deleted_at">
+                <button
+                  @click="handleRestore(p.id)"
+                  v-title="'Reintegrar prospecto'"
+                  class="p-2 bg-slate-900/20 border border-white/5 hover:border-green-500/30 text-slate-400 hover:text-green-400 rounded-xl transition-all duration-200"
+                >
+                  <i class="fas fa-undo text-xs"></i>
+                </button>
+              </template>
+              <!-- Si está activo -->
+              <template v-else-if="p.etapa !== 'cierre'">
                 <!-- Botón Avanzar Etapa -->
                 <button
                   @click="openAdvanceModal(p)"
@@ -354,10 +391,24 @@ export default {
     const currentUser = computed(() => authStore.user);
 
     const vehiculosOptions = computed(() => {
-      return vehiculos.value.map(v => ({
-        value: v.id,
-        label: `${v.marca} ${v.modelo} (${v.anio}) - S/ ${parseFloat(v.precio).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-      }));
+      return vehiculos.value.map(v => {
+        const isSelected = isEditing.value && form.value.vehiculo_id === v.id;
+        const outOfStock = v.stock_disponible !== undefined && v.stock_disponible <= 0;
+        const isDisabled = outOfStock && !isSelected;
+        
+        let stockLabel = '';
+        if (v.stock_disponible !== undefined) {
+          stockLabel = v.stock_disponible > 0 
+            ? ` (${v.stock_disponible} disp)` 
+            : ' (Agotado/Reservado)';
+        }
+
+        return {
+          value: v.id,
+          label: `${v.marca} ${v.modelo} (${v.anio})${stockLabel} - S/ ${parseFloat(v.precio).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+          disabled: isDisabled
+        };
+      });
     });
 
     const empleadosOptions = computed(() => {
@@ -423,10 +474,12 @@ export default {
     const showAdvanceModal = ref(false);
     const selectedProspecto = ref(null);
 
+    const showDeleted = ref(false);
+
     const loadProspectos = async () => {
       loading.value = true;
       try {
-        prospectos.value = await prospectoService.getProspectos();
+        prospectos.value = await prospectoService.getProspectos(showDeleted.value);
       } catch (err) {
         notification.showError(err);
       } finally {
@@ -523,7 +576,7 @@ export default {
     };
 
     const handleDelete = async (id) => {
-      const result = await confirmDelete('¿Eliminar prospecto?', 'Esta acción aplicará un soft delete al registro del prospecto.');
+      const result = await confirmDelete('¿Eliminar prospecto?', 'Esta acción quitará el prospecto del listado.');
       if (result.isConfirmed) {
         try {
           await prospectoService.deleteProspecto(id);
@@ -532,6 +585,16 @@ export default {
         } catch (err) {
           notification.showError(err);
         }
+      }
+    };
+
+    const handleRestore = async (id) => {
+      try {
+        await prospectoService.restoreProspecto(id);
+        notification.showSuccess('Prospecto reintegrado exitosamente.');
+        loadProspectos();
+      } catch (err) {
+        notification.showError(err);
       }
     };
 
@@ -711,7 +774,10 @@ export default {
       documentoHint,
       empleadosOptions,
       isAdmin,
-      assignedEmpleadoName
+      assignedEmpleadoName,
+      showDeleted,
+      handleRestore,
+      loadProspectos
     };
   },
 };

@@ -47,10 +47,13 @@
             <td class="p-4 pl-6">
               <div v-if="s.venta" class="flex flex-col">
                 <span class="font-bold text-slate-200">
-                  ID Venta #{{ s.venta.id }}
+                  {{ getVentaDetail(s.venta.id)?.clientName || 'Cargando...' }}
                 </span>
-                <span class="text-xs text-slate-500 mt-0.5">
-                  Monto auto: S/ {{ formatCurrency(s.venta.monto) }}
+                <span class="text-xs text-slate-400 mt-0.5">
+                  {{ getVentaDetail(s.venta.id)?.vehicleInfo || 'Cargando...' }}
+                </span>
+                <span class="text-[11px] text-slate-500 mt-0.5">
+                  ID Venta #{{ s.venta.id }} - Auto: S/ {{ formatCurrency(s.venta.monto) }}
                 </span>
               </div>
               <span v-else class="text-slate-500">Venta no disponible</span>
@@ -70,7 +73,7 @@
                 {{ s.estado === 'vendido' ? 'Vendido' : 'Prospectado' }}
               </span>
             </td>
-            <td class="p-4 pr-6 text-right space-x-2">
+            <td class="p-4 pr-6 text-right space-x-2 whitespace-nowrap">
               <!-- Botón Editar -->
               <button
                 @click="openEditModal(s)"
@@ -119,14 +122,32 @@
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Tipo de Seguro</label>
-            <input v-model="form.tipo_seguro" type="text" required placeholder="ej. Todo Riesgo Premium, Responsabilidad Civil" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Plan de Seguro</label>
+            <CustomSelect
+              v-model="selectedProduct"
+              :options="seguroProductOptions"
+              placeholder="Selecciona un plan de seguro..."
+              @change="onProductSelect"
+            />
+          </div>
+
+          <div v-if="selectedProduct === 'personalizado'">
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Especificar Tipo de Seguro</label>
+            <input v-model="form.tipo_seguro" type="text" required placeholder="ej. Todo Riesgo Especial Coaseguro" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 placeholder-slate-600 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Prima Esperada (S/)</label>
-              <input v-model="form.prima_esperada" type="number" step="0.01" required class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <input 
+                v-model="form.prima_esperada" 
+                type="number" 
+                step="0.01" 
+                required 
+                :readonly="selectedProduct !== 'personalizado'"
+                class="w-full p-2.5 border rounded-xl text-sm focus:outline-none transition-all duration-300" 
+                :class="selectedProduct !== 'personalizado' ? 'bg-slate-950/40 border-white/5 text-slate-400 cursor-not-allowed' : 'bg-slate-900/20 border-white/5 text-slate-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30'"
+              />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Prima Real (S/)</label>
@@ -164,6 +185,7 @@ import { seguroService } from '../services/seguroService';
 import { ventaService } from '../services/ventaService';
 import { useNotification } from '../composables/useNotification';
 import CustomSelect from '../components/CustomSelect.vue';
+import { useSwal } from '../composables/useSwal';
 
 export default {
   components: {
@@ -171,6 +193,7 @@ export default {
   },
   setup() {
     const notification = useNotification();
+    const { confirmDelete } = useSwal();
 
     const seguros = ref([]);
     const ventas = ref([]);
@@ -179,6 +202,7 @@ export default {
     // Modal
     const showFormModal = ref(false);
     const isEditing = ref(false);
+    const selectedProduct = ref('');
     const form = ref({
       id: null,
       venta_id: '',
@@ -188,16 +212,50 @@ export default {
       estado: 'prospectado',
     });
 
+    const seguroProductOptions = [
+      { value: 'Seguro Básico (Responsabilidad Civil)', label: 'Seguro Básico (Responsabilidad Civil) - S/ 450.00', price: 450 },
+      { value: 'Seguro Estándar (Choque y Robo)', label: 'Seguro Estándar (Choque y Robo) - S/ 850.00', price: 850 },
+      { value: 'Seguro Premium (Todo Riesgo)', label: 'Seguro Premium (Todo Riesgo) - S/ 1,200.00', price: 1200 },
+      { value: 'Seguro Platino (Todo Riesgo + Asistencia)', label: 'Seguro Platino (Todo Riesgo + Asistencia) - S/ 1,800.00', price: 1800 },
+      { value: 'personalizado', label: 'Otro / Personalizado...', price: 0 }
+    ];
+
+    const onProductSelect = (val) => {
+      if (val === 'personalizado') {
+        form.value.tipo_seguro = '';
+        form.value.prima_esperada = '';
+      } else {
+        const opt = seguroProductOptions.find(o => o.value === val);
+        if (opt) {
+          form.value.tipo_seguro = opt.value;
+          form.value.prima_esperada = opt.price;
+        }
+      }
+    };
+
+    const getVentaDetail = (ventaId) => {
+      const v = ventas.value.find(item => item.id === ventaId);
+      if (!v) return null;
+      return {
+        clientName: v.prospecto ? v.prospecto.nombre : 'Cliente N/A',
+        vehicleInfo: v.vehiculo ? `${v.vehiculo.marca} ${v.vehiculo.modelo} (${v.vehiculo.anio})` : 'Vehículo N/A'
+      };
+    };
+
     // Solo ventas efectivas para poder asociarles seguro
     const ventasEfectivas = computed(() => {
       return ventas.value.filter((v) => v.estado === 'efectiva');
     });
 
     const ventasOptions = computed(() => {
-      return ventasEfectivas.value.map(v => ({
-        value: v.id,
-        label: `Venta #${v.id} - Monto: S/ ${parseFloat(v.monto).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-      }));
+      return ventasEfectivas.value.map(v => {
+        const clientName = v.prospecto ? v.prospecto.nombre : 'Cliente N/A';
+        const vehicleInfo = v.vehiculo ? `${v.vehiculo.marca} ${v.vehiculo.modelo} (${v.vehiculo.anio})` : 'Vehículo N/A';
+        return {
+          value: v.id,
+          label: `Venta #${v.id} - ${clientName} - ${vehicleInfo} - S/ ${parseFloat(v.monto).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+        };
+      });
     });
 
     const estadoOptions = [
@@ -234,6 +292,7 @@ export default {
 
     const openAddModal = () => {
       isEditing.value = false;
+      selectedProduct.value = '';
       form.value = {
         id: null,
         venta_id: '',
@@ -247,6 +306,9 @@ export default {
 
     const openEditModal = (s) => {
       isEditing.value = true;
+      const exists = seguroProductOptions.some(o => o.value === s.tipo_seguro);
+      selectedProduct.value = exists ? s.tipo_seguro : 'personalizado';
+
       form.value = {
         id: s.id,
         venta_id: s.venta_id,
@@ -263,6 +325,22 @@ export default {
     };
 
     const saveSeguro = async () => {
+      // Validar rango de desviación de prima real si está vendido
+      if (form.value.estado === 'vendido') {
+        const esperada = parseFloat(form.value.prima_esperada);
+        const real = parseFloat(form.value.prima_real);
+        if (isNaN(real)) {
+          notification.showError('La prima real es obligatoria si el seguro está vendido.');
+          return;
+        }
+        const min = esperada * 0.70;
+        const max = esperada * 1.30;
+        if (real < min || real > max) {
+          notification.showError(`La prima real (S/ ${real.toFixed(2)}) debe estar dentro del rango permitido del 70% al 130% de la prima esperada (rango permitido: S/ ${min.toFixed(2)} a S/ ${max.toFixed(2)}).`);
+          return;
+        }
+      }
+
       try {
         // Si es prospectado y la prima real está vacía, enviamos null
         const payload = { ...form.value };
@@ -285,7 +363,11 @@ export default {
     };
 
     const handleDelete = async (id) => {
-      if (confirm('¿Estás seguro de eliminar este registro de seguro?')) {
+      const result = await confirmDelete(
+        '¿Eliminar seguro?',
+        'Esta acción quitará el registro de la póliza de seguro de la lista.'
+      );
+      if (result.isConfirmed) {
         try {
           await seguroService.deleteSeguro(id);
           notification.showSuccess('Registro de seguro eliminado.');
@@ -320,6 +402,10 @@ export default {
       // Select Options
       ventasOptions,
       estadoOptions,
+      selectedProduct,
+      seguroProductOptions,
+      onProductSelect,
+      getVentaDetail
     };
   },
 };

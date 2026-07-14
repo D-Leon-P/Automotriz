@@ -15,15 +15,16 @@ class ProspectoController extends Controller
     {
         $this->middleware('auth:api');
         $this->middleware('permission:ver_prospectos_propios,ver_prospectos_todos')->only(['index', 'show']);
-        $this->middleware('permission:gestionar_prospectos_propios,gestionar_prospectos_todos')->only(['store', 'update', 'destroy']);
+        $this->middleware('permission:gestionar_prospectos_propios,gestionar_prospectos_todos')->only(['store', 'update', 'destroy', 'restore']);
         $this->prospectoService = $prospectoService;
     }
 
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $user = Auth::user();
         $empleadoId = $user->hasPermission('ver_prospectos_todos') ? null : $user->id;
-        $prospectos = $this->prospectoService->getAllProspectos($empleadoId);
+        $showDeleted = $request->query('show_deleted') === 'true';
+        $prospectos = $this->prospectoService->getAllProspectos($empleadoId, $showDeleted);
         return response()->json($prospectos);
     }
 
@@ -123,5 +124,24 @@ class ProspectoController extends Controller
             'status' => 'success',
             'message' => 'Prospecto eliminado exitosamente.'
         ]);
+    }
+
+    public function restore($id)
+    {
+        $user = Auth::user();
+        $empleadoId = $user->hasPermission('gestionar_prospectos_todos') ? null : $user->id;
+        try {
+            $restored = $this->prospectoService->restoreProspecto($id, $empleadoId);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Prospecto reintegrado exitosamente.',
+                'data' => $restored
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 422);
+        }
     }
 }

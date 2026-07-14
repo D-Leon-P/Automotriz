@@ -374,13 +374,10 @@
       }
     },
     {
-      "parameters": {
-        "operation": "log",
-        "message": "=[n8n LOG] Evento recibido: {{ $json.action }} para {{ $json.action === 'created' ? 'registro' : 'actualización' }} en {{ $json.timestamp }}"
-      },
+      "parameters": {},
       "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
       "name": "Registrar Log de Eventos",
-      "type": "n8n-nodes-base.debug",
+      "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
         400,
@@ -394,7 +391,8 @@
         [
           {
             "node": "Consultar Prospectos Inactivos (>5 días)",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -404,7 +402,8 @@
         [
           {
             "node": "Inactivos Encontrados?",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -414,7 +413,8 @@
         [
           {
             "node": "Disparar Alerta a Laravel",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -424,11 +424,13 @@
         [
           {
             "node": "Registrar Log de Eventos",
-            "index": 0
+            "index": 0,
+            "type": "main"
           },
           {
             "node": "Switch: Accion Prospecto",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -438,13 +440,15 @@
         [
           {
             "node": "Sync: Upsert Prospecto",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ],
         [
           {
             "node": "Sync: Delete Prospecto",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -454,11 +458,13 @@
         [
           {
             "node": "Registrar Log de Eventos",
-            "index": 0
+            "index": 0,
+            "type": "main"
           },
           {
             "node": "Switch: Accion Venta",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -468,13 +474,15 @@
         [
           {
             "node": "Sync: Upsert Venta",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ],
         [
           {
             "node": "Sync: Delete Venta",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -484,7 +492,8 @@
         [
           {
             "node": "Sync: Consultar Stock Venta",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -494,7 +503,8 @@
         [
           {
             "node": "Sync: Actualizar Catalogo Stock",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -504,11 +514,13 @@
         [
           {
             "node": "Registrar Log de Eventos",
-            "index": 0
+            "index": 0,
+            "type": "main"
           },
           {
             "node": "Switch: Accion Seguro",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -518,13 +530,15 @@
         [
           {
             "node": "Sync: Upsert Seguro",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ],
         [
           {
             "node": "Sync: Delete Seguro",
-            "index": 0
+            "index": 0,
+            "type": "main"
           }
         ]
       ]
@@ -534,5 +548,6 @@
   "settings": {
     "saveExecutionProgress": true,
     "saveManualExecutions": true
-  }
+  },
+  "id": "1"
 }

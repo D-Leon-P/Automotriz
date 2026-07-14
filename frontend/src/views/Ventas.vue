@@ -15,6 +15,20 @@
       </button>
     </div>
 
+    <!-- Filtros de Ventas -->
+    <div class="flex flex-wrap items-center justify-between gap-4 pb-2">
+      <div></div>
+      <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200 cursor-pointer select-none">
+        <input 
+          v-model="showDeleted" 
+          type="checkbox" 
+          class="w-4 h-4 rounded border-white/5 bg-slate-900/20 text-amber-500 focus:ring-amber-500/30"
+          @change="loadVentas"
+        />
+        <span>Mostrar eliminadas</span>
+      </label>
+    </div>
+
     <!-- Spinner / Vacío / Tabla -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-3">
       <span class="animate-spin border-4 border-amber-500 border-t-transparent rounded-full w-12 h-12"></span>
@@ -44,9 +58,19 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
-          <tr v-for="v in ventas" :key="v.id" class="hover:bg-slate-900/20 transition-colors duration-200 text-sm">
+          <tr 
+            v-for="v in ventas" 
+            :key="v.id" 
+            :class="[
+              'hover:bg-slate-900/20 transition-colors duration-200 text-sm', 
+              v.deleted_at ? 'opacity-40 bg-slate-950/20' : ''
+            ]"
+          >
             <td class="p-4 pl-6 font-bold text-slate-200">
-              {{ v.prospecto ? v.prospecto.nombre : 'Prospecto Eliminado' }}
+              <div class="flex items-center gap-1.5">
+                <span>{{ v.prospecto ? v.prospecto.nombre : 'Prospecto Eliminado' }}</span>
+                <span v-if="v.deleted_at" class="text-[9px] bg-red-500/10 border border-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Eliminada</span>
+              </div>
             </td>
             <td class="p-4 text-slate-300">
               <span v-if="v.vehiculo" class="font-semibold text-slate-300">
@@ -64,24 +88,41 @@
               <span
                 :class="[
                   'px-3 py-1 rounded-full text-xs font-bold capitalize border inline-block',
-                  v.estado === 'efectiva' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+                  v.deleted_at ? 'bg-slate-500/10 border-slate-500/20 text-slate-500' : '',
+                  (!v.deleted_at && v.estado === 'efectiva') ? 'bg-green-500/10 border-green-500/20 text-green-400' : '',
+                  (!v.deleted_at && v.estado === 'fallida') ? 'bg-red-500/10 border-red-500/20 text-red-400' : '',
                 ]"
               >
-                {{ v.estado === 'efectiva' ? 'Efectiva' : 'Fallida' }}
+                {{ v.deleted_at ? 'Eliminada' : (v.estado === 'efectiva' ? 'Efectiva' : 'Fallida') }}
               </span>
             </td>
             <td class="p-4 text-slate-400 max-w-xs truncate">
               {{ v.estado === 'fallida' ? v.motivo_perdida : 'Cierre exitoso' }}
             </td>
-            <td class="p-4 pr-6 text-right space-x-2">
-              <!-- Botón Eliminar -->
-              <button
-                @click="handleDelete(v.id)"
-                v-title.right="'Eliminar venta'"
-                class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
-              >
-                <i class="fas fa-trash-alt text-xs"></i>
-              </button>
+            <td class="p-4 pr-6 text-right space-x-2 whitespace-nowrap">
+              <!-- Si está eliminada -->
+              <template v-if="v.deleted_at">
+                <button
+                  v-if="isAdmin"
+                  @click="handleRestore(v.id)"
+                  v-title="'Reintegrar venta'"
+                  class="p-2 bg-slate-900/20 border border-white/5 hover:border-green-500/30 text-slate-400 hover:text-green-400 rounded-xl transition-all duration-200"
+                >
+                  <i class="fas fa-undo text-xs"></i>
+                </button>
+              </template>
+              <!-- Si está activa -->
+              <template v-else>
+                <!-- Botón Eliminar -->
+                <button
+                  v-if="isAdmin"
+                  @click="handleDelete(v.id)"
+                  v-title.right="'Eliminar venta'"
+                  class="p-2 bg-slate-900/20 border border-white/5 hover:border-red-500/30 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200"
+                >
+                  <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+              </template>
             </td>
           </tr>
         </tbody>
@@ -171,6 +212,7 @@ import { ventaService } from '../services/ventaService';
 import { prospectoService } from '../services/prospectoService';
 import { useNotification } from '../composables/useNotification';
 import CustomSelect from '../components/CustomSelect.vue';
+import { useSwal } from '../composables/useSwal';
 
 export default {
   components: {
@@ -179,6 +221,7 @@ export default {
   setup() {
     const authStore = ref(useAuthStore());
     const notification = useNotification();
+    const { confirmDelete } = useSwal();
 
     const ventas = ref([]);
     const prospectos = ref([]);
@@ -196,6 +239,10 @@ export default {
     });
 
     const currentUser = computed(() => authStore.value.user);
+
+    const isAdmin = computed(() => {
+      return currentUser.value && currentUser.value.rol && currentUser.value.rol.nombre === 'administrador';
+    });
 
     const prospectosOptions = computed(() => {
       return activeProspectos.value.map(p => ({
@@ -223,10 +270,12 @@ export default {
       return p && p.vehiculo ? `${p.vehiculo.marca} ${p.vehiculo.modelo} (${p.vehiculo.anio})` : 'No asignado';
     });
 
+    const showDeleted = ref(false);
+
     const loadVentas = async () => {
       loading.value = true;
       try {
-        ventas.value = await ventaService.getVentas();
+        ventas.value = await ventaService.getVentas(showDeleted.value);
       } catch (err) {
         notification.showError(err);
       } finally {
@@ -286,7 +335,11 @@ export default {
     };
 
     const handleDelete = async (id) => {
-      if (confirm('¿Estás seguro de eliminar este registro de venta? El stock del vehículo se devolverá si la venta era efectiva.')) {
+      const result = await confirmDelete(
+        '¿Eliminar venta?',
+        'Esta acción eliminará el registro de la venta y devolverá el vehículo al inventario si corresponde.'
+      );
+      if (result.isConfirmed) {
         try {
           await ventaService.deleteVenta(id);
           notification.showSuccess('Registro de venta eliminado.');
@@ -295,6 +348,17 @@ export default {
         } catch (err) {
           notification.showError(err);
         }
+      }
+    };
+
+    const handleRestore = async (id) => {
+      try {
+        await ventaService.restoreVenta(id);
+        notification.showSuccess('Registro de venta reintegrado exitosamente.');
+        loadVentas();
+        loadProspectos();
+      } catch (err) {
+        notification.showError(err);
       }
     };
 
@@ -310,6 +374,7 @@ export default {
       loading,
       formatCurrency,
       currentUser,
+      isAdmin,
       
       // Form Modal
       showFormModal,
@@ -324,6 +389,9 @@ export default {
       // Select options
       prospectosOptions,
       estadoOptions,
+      showDeleted,
+      handleRestore,
+      loadVentas
     };
   },
 };

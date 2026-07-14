@@ -29,6 +29,7 @@ Route::apiResource('vehiculos', VehiculoController::class)->only(['index', 'show
 
 // Rutas de Prospectos
 Route::get('prospectos/inactivos', [AlertaController::class, 'getInactivos']);
+Route::post('prospectos/{id}/restore', [ProspectoController::class, 'restore']);
 Route::apiResource('prospectos', ProspectoController::class);
 
 // Rutas de Roles y Permisos

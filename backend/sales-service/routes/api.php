@@ -10,5 +10,6 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+Route::post('ventas/{id}/restore', [VentaController::class, 'restore']);
 Route::apiResource('ventas', VentaController::class);
 Route::apiResource('clientes', ClienteController::class);

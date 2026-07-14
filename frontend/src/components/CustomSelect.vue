@@ -37,12 +37,14 @@
           <div
             v-for="opt in normalizedOptions"
             :key="opt.value"
-            @click="selectOption(opt)"
+            @click="!opt.disabled && selectOption(opt)"
             :class="[
-              'px-4 py-2.5 text-sm text-slate-300 cursor-pointer transition-all duration-150 flex items-center justify-between',
-              modelValue === opt.value
-                ? 'bg-amber-500/20 text-amber-400 font-bold border-l-4 border-amber-500'
-                : 'hover:bg-slate-900 hover:text-slate-100'
+              'px-4 py-2.5 text-sm transition-all duration-150 flex items-center justify-between',
+              opt.disabled
+                ? 'opacity-45 cursor-not-allowed text-slate-500 bg-slate-950/20'
+                : modelValue === opt.value
+                  ? 'bg-amber-500/20 text-amber-400 font-bold border-l-4 border-amber-500 cursor-pointer'
+                  : 'hover:bg-slate-900 hover:text-slate-100 cursor-pointer'
             ]"
           >
             <span>{{ opt.label }}</span>
@@ -88,9 +90,10 @@ export default {
           // Si el objeto tiene una estructura personalizada
           let val = opt.value !== undefined ? opt.value : opt.id;
           let lbl = opt.label !== undefined ? opt.label : opt.nombre || opt.modelo || String(opt);
-          return { value: val, label: lbl };
+          let dis = opt.disabled !== undefined ? opt.disabled : false;
+          return { value: val, label: lbl, disabled: dis };
         }
-        return { value: opt, label: opt };
+        return { value: opt, label: opt, disabled: false };
       });
     });
 
@@ -105,9 +108,11 @@ export default {
     };
 
     const selectOption = (opt) => {
-      emit('update:modelValue', opt.value);
-      emit('change', opt.value);
-      isOpen.value = false;
+      if (!opt.disabled) {
+        emit('update:modelValue', opt.value);
+        emit('change', opt.value);
+        isOpen.value = false;
+      }
     };
 
     const handleClickOutside = (e) => {

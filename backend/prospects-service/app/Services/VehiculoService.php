@@ -15,11 +15,25 @@ class VehiculoService
 
     public function getAllVehiculos()
     {
-        return $this->vehiculoRepository->all();
+        $vehiculos = $this->vehiculoRepository->all();
+        foreach ($vehiculos as $vehiculo) {
+            $activeCount = \App\Models\Prospecto::where('vehiculo_id', $vehiculo->id)
+                ->where('etapa', '!=', 'cierre')
+                ->count();
+            $vehiculo->stock_disponible = max(0, $vehiculo->stock - $activeCount);
+        }
+        return $vehiculos;
     }
 
     public function getVehiculoById($id)
     {
-        return $this->vehiculoRepository->find($id);
+        $vehiculo = $this->vehiculoRepository->find($id);
+        if ($vehiculo) {
+            $activeCount = \App\Models\Prospecto::where('vehiculo_id', $vehiculo->id)
+                ->where('etapa', '!=', 'cierre')
+                ->count();
+            $vehiculo->stock_disponible = max(0, $vehiculo->stock - $activeCount);
+        }
+        return $vehiculo;
     }
 }

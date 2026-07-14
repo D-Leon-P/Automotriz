@@ -1,9 +1,9 @@
 import { prospectoRepository } from '../repositories/prospectoRepository';
 
 export const prospectoService = {
-  async getProspectos() {
+  async getProspectos(showDeleted = false) {
     try {
-      const response = await prospectoRepository.getAll();
+      const response = await prospectoRepository.getAll(showDeleted);
       return response.data;
     } catch (error) {
       throw error.response?.data?.message || 'Error al obtener prospectos';
@@ -43,6 +43,15 @@ export const prospectoService = {
       return response.data;
     } catch (error) {
       throw error.response?.data?.message || 'Error al eliminar prospecto';
+    }
+  },
+
+  async restoreProspecto(id) {
+    try {
+      const response = await prospectoRepository.restore(id);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Error al reintegrar prospecto';
     }
   },
 

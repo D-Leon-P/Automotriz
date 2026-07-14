@@ -1,9 +1,9 @@
 import { ventaRepository } from '../repositories/ventaRepository';
 
 export const ventaService = {
-  async getVentas() {
+  async getVentas(showDeleted = false) {
     try {
-      const response = await ventaRepository.getAll();
+      const response = await ventaRepository.getAll(showDeleted);
       return response.data;
     } catch (error) {
       throw error.response?.data?.message || 'Error al obtener ventas';
@@ -43,6 +43,15 @@ export const ventaService = {
       return response.data;
     } catch (error) {
       throw error.response?.data?.message || 'Error al eliminar venta';
+    }
+  },
+
+  async restoreVenta(id) {
+    try {
+      const response = await ventaRepository.restore(id);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Error al reintegrar venta';
     }
   }
 };

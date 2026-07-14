@@ -6,9 +6,12 @@ use App\Models\Venta;
 
 class VentaRepository
 {
-    public function allForVendedor($empleadoId)
+    public function allForVendedor($empleadoId, $showDeleted = false)
     {
         $query = Venta::with(['prospecto', 'vehiculo', 'empleado']);
+        if ($showDeleted) {
+            $query->withTrashed();
+        }
         if ($empleadoId !== null) {
             $query->where('empleado_id', $empleadoId);
         }
@@ -18,6 +21,15 @@ class VentaRepository
     public function findForVendedor($id, $empleadoId)
     {
         $query = Venta::with(['prospecto', 'vehiculo', 'empleado'])->where('id', $id);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->first();
+    }
+
+    public function findTrashedForVendedor($id, $empleadoId)
+    {
+        $query = Venta::withTrashed()->with(['prospecto', 'vehiculo', 'empleado'])->where('id', $id);
         if ($empleadoId !== null) {
             $query->where('empleado_id', $empleadoId);
         }

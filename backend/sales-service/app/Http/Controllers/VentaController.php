@@ -15,15 +15,17 @@ class VentaController extends Controller
     {
         $this->middleware('auth:api');
         $this->middleware('permission:ver_ventas_propias,ver_ventas_todas')->only(['index', 'show']);
-        $this->middleware('permission:gestionar_ventas_propias,gestionar_ventas_todas')->only(['store', 'update', 'destroy']);
+        $this->middleware('permission:gestionar_ventas_propias,gestionar_ventas_todas')->only(['store', 'update']);
+        $this->middleware('permission:gestionar_ventas_todas')->only(['destroy', 'restore']);
         $this->ventaService = $ventaService;
     }
 
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $user = Auth::user();
         $empleadoId = $user->hasPermission('ver_ventas_todas') ? null : $user->id;
-        $ventas = $this->ventaService->getAllVentas($empleadoId);
+        $showDeleted = $request->query('show_deleted') === 'true';
+        $ventas = $this->ventaService->getAllVentas($empleadoId, $showDeleted);
         return response()->json($ventas);
     }
 
@@ -111,6 +113,25 @@ class VentaController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Venta eliminada exitosamente y stock devuelto si correspondía.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function restore($id)
+    {
+        try {
+            $user = Auth::user();
+            $empleadoId = $user->hasPermission('gestionar_ventas_todas') ? null : $user->id;
+            $venta = $this->ventaService->restoreVenta($id, $empleadoId);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Venta reintegrada exitosamente y stock ajustado si correspondía.',
+                'data' => $venta
             ]);
         } catch (\Exception $e) {
             return response()->json([

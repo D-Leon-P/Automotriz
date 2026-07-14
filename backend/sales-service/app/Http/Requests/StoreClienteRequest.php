@@ -19,9 +19,20 @@ class StoreClienteRequest extends FormRequest
             'apellido' => 'nullable|string|max:50',
             'razon_social' => 'nullable|string|max:150',
             'fecha_nacimiento' => 'nullable|date|before_or_equal:' . now()->subYears(18)->format('Y-m-d') . '|after_or_equal:' . now()->subYears(90)->format('Y-m-d'),
-            'email' => 'required_without:telefono|nullable|email|max:100|unique:clientes,email',
-            'telefono' => 'required_without:email|nullable|string|max:20',
-            'documento' => 'required|string|max:20|unique:clientes,documento',
+            'email' => [
+                'required_without:telefono',
+                'nullable',
+                'email',
+                'max:100',
+                \Illuminate\Validation\Rule::unique('clientes', 'email')->whereNull('deleted_at')
+            ],
+            'telefono' => 'required_without:email|nullable|string|regex:/^[0-9]{9}$/',
+            'documento' => [
+                'required',
+                'string',
+                'max:20',
+                \Illuminate\Validation\Rule::unique('clientes', 'documento')->whereNull('deleted_at')
+            ],
             'direccion' => 'nullable|string|max:255',
         ];
     }
@@ -31,6 +42,7 @@ class StoreClienteRequest extends FormRequest
         return [
             'email.required_without' => 'Debe registrar al menos un correo electrónico o un teléfono de contacto.',
             'telefono.required_without' => 'Debe registrar al menos un correo electrónico o un teléfono de contacto.',
+            'telefono.regex' => 'El teléfono de contacto debe tener exactamente 9 dígitos numéricos.',
             'fecha_nacimiento.before_or_equal' => 'El cliente debe ser mayor de edad (mínimo 18 años).',
             'fecha_nacimiento.after_or_equal' => 'El cliente no puede tener más de 90 años.'
         ];
@@ -41,6 +53,12 @@ class StoreClienteRequest extends FormRequest
         $validator->after(function ($validator) {
             $tipo = $this->tipo_documento;
             $doc = $this->documento;
+
+            if ($tipo === 'DNI' || $tipo === 'CEX') {
+                if (empty($this->fecha_nacimiento)) {
+                    $validator->errors()->add('fecha_nacimiento', 'La fecha de nacimiento es obligatoria para personas naturales (DNI y CEX).');
+                }
+            }
 
             if ($tipo === 'DNI') {
                 if (!preg_match('/^[0-9]{8}$/', $doc)) {

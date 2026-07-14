@@ -6,9 +6,12 @@ use App\Models\Prospecto;
 
 class ProspectoRepository
 {
-    public function allForVendedor($empleadoId)
+    public function allForVendedor($empleadoId, $showDeleted = false)
     {
         $query = Prospecto::with(['vehiculo', 'empleado']);
+        if ($showDeleted) {
+            $query->withTrashed();
+        }
         if ($empleadoId !== null) {
             $query->where('empleado_id', $empleadoId);
         }
@@ -18,6 +21,15 @@ class ProspectoRepository
     public function findForVendedor($id, $empleadoId)
     {
         $query = Prospecto::with(['vehiculo', 'empleado'])->where('id', $id);
+        if ($empleadoId !== null) {
+            $query->where('empleado_id', $empleadoId);
+        }
+        return $query->first();
+    }
+
+    public function findTrashedForVendedor($id, $empleadoId)
+    {
+        $query = Prospecto::withTrashed()->with(['vehiculo', 'empleado'])->where('id', $id);
         if ($empleadoId !== null) {
             $query->where('empleado_id', $empleadoId);
         }

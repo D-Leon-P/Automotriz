@@ -76,7 +76,7 @@
               </div>
             </td>
             <td class="p-4 text-slate-400 max-w-xs truncate">{{ c.direccion || '-' }}</td>
-            <td v-if="canManage" class="p-4 pr-6 text-right space-x-2">
+            <td v-if="canManage" class="p-4 pr-6 text-right space-x-2 whitespace-nowrap">
               <button
                 @click="openEditModal(c)"
                 v-title="'Editar cliente'"
@@ -149,10 +149,11 @@
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Fecha Nacimiento</label>
+              <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Fecha Nacimiento <span class="text-amber-500">*</span></label>
               <input 
                 v-model="form.fecha_nacimiento" 
                 type="date" 
+                required
                 :min="minBirthDate" 
                 :max="maxBirthDate"
                 class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" 
@@ -174,7 +175,17 @@
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Teléfono</label>
-              <input v-model="form.telefono" type="text" class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" />
+              <input 
+                v-model="form.telefono" 
+                @input="form.telefono = form.telefono.replace(/\D/g, '')"
+                maxlength="9"
+                placeholder="Ej. 987654321"
+                type="text" 
+                class="w-full p-2.5 bg-slate-900/20 border border-white/5 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all duration-300" 
+              />
+              <p class="text-[10px] text-slate-500 mt-1 font-medium leading-normal">
+                Si se provee, debe tener exactamente 9 dígitos numéricos.
+              </p>
             </div>
           </div>
           <p class="text-[10px] text-amber-500/80 font-medium leading-none mt-1">
@@ -298,7 +309,7 @@ export default {
         nombre: c.nombre || '',
         apellido: c.apellido || '',
         documento: c.documento || '',
-        fecha_nacimiento: c.fecha_nacimiento || '',
+        fecha_nacimiento: c.fecha_nacimiento ? c.fecha_nacimiento.substring(0, 10) : '',
         razon_social: c.razon_social || '',
         email: c.email || '',
         telefono: c.telefono || '',
@@ -318,8 +329,18 @@ export default {
         return;
       }
 
-      // Validar edad si es DNI o CEX y hay fecha de nacimiento
-      if ((form.value.tipo_documento === 'DNI' || form.value.tipo_documento === 'CEX') && form.value.fecha_nacimiento) {
+      // Validar formato del teléfono si se proporciona
+      if (form.value.telefono && !/^[0-9]{9}$/.test(form.value.telefono)) {
+        notification.showError('El teléfono de contacto debe tener exactamente 9 dígitos numéricos.');
+        return;
+      }
+
+      // Validar edad y presencia de fecha de nacimiento si es DNI o CEX
+      if (form.value.tipo_documento === 'DNI' || form.value.tipo_documento === 'CEX') {
+        if (!form.value.fecha_nacimiento) {
+          notification.showError('La fecha de nacimiento es obligatoria para personas naturales (DNI y CEX).');
+          return;
+        }
         const birth = new Date(form.value.fecha_nacimiento);
         const today = new Date();
         let age = today.getFullYear() - birth.getFullYear();
@@ -336,6 +357,15 @@ export default {
           notification.showError('El cliente no puede tener más de 90 años.');
           return;
         }
+      }
+
+      // Limpiar campos que no aplican según tipo de documento
+      if (form.value.tipo_documento === 'RUC') {
+        form.value.fecha_nacimiento = '';
+        form.value.nombre = '';
+        form.value.apellido = '';
+      } else {
+        form.value.razon_social = '';
       }
 
       // Si es CEX y tiene texto, auto-completar con ceros a la izquierda hasta 9 caracteres
@@ -369,7 +399,7 @@ export default {
     };
 
     const handleDelete = async (id) => {
-      const result = await confirmDelete('¿Eliminar cliente?', 'Esta acción aplicará un soft delete al registro del cliente.');
+      const result = await confirmDelete('¿Eliminar cliente?', 'Esta acción quitará al cliente de la lista.');
       if (result.isConfirmed) {
         try {
           await generalesService.deleteCliente(id);

@@ -18,9 +18,9 @@ class VentaService
         $this->ventaRepository = $ventaRepository;
     }
 
-    public function getAllVentas($empleadoId)
+    public function getAllVentas($empleadoId, $showDeleted = false)
     {
-        return $this->ventaRepository->allForVendedor($empleadoId);
+        return $this->ventaRepository->allForVendedor($empleadoId, $showDeleted);
     }
 
     public function getVentaById($id, $empleadoId)
@@ -121,6 +121,28 @@ class VentaService
 
             $this->notifyN8n('deleted', $venta);
             return $this->ventaRepository->delete($id, $empleadoId);
+        });
+    }
+
+    public function restoreVenta($id, $empleadoId = null)
+    {
+        return DB::transaction(function () use ($id, $empleadoId) {
+            $venta = $this->ventaRepository->findTrashedForVendedor($id, $empleadoId);
+            if (!$venta) {
+                throw new \Exception("Venta no encontrada o no autorizada.");
+            }
+
+            if ($venta->estado === 'efectiva') {
+                $vehiculo = Vehiculo::findOrFail($venta->vehiculo_id);
+                if ($vehiculo->stock <= 0) {
+                    throw new \Exception("No hay stock disponible del vehículo para reintegrar esta venta.");
+                }
+                $vehiculo->decrement('stock');
+            }
+
+            $venta->restore();
+            $this->notifyN8n('updated', $venta);
+            return $venta;
         });
     }
 
