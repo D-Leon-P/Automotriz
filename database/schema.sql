@@ -173,6 +173,40 @@ CREATE TABLE IF NOT EXISTS ventas (
 CREATE DATABASE IF NOT EXISTS insurance_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE insurance_db;
 
+CREATE TABLE IF NOT EXISTS roles (
+    id INT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS permisos (
+    id INT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS rol_permiso (
+    rol_id INT NOT NULL,
+    permiso_id INT NOT NULL,
+    PRIMARY KEY (rol_id, permiso_id),
+    FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE CASCADE,
+    FOREIGN KEY (permiso_id) REFERENCES permisos(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS empleados (
+    id INT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    rol_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+    FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS ventas (
     id INT PRIMARY KEY,
     prospecto_id INT NOT NULL,
@@ -182,7 +216,8 @@ CREATE TABLE IF NOT EXISTS ventas (
     estado VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL
+    deleted_at TIMESTAMP NULL,
+    FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS seguros (
@@ -373,6 +408,27 @@ ON DUPLICATE KEY UPDATE id=id;
 
 -- Insertar datos iniciales réplicas en insurance_db
 USE insurance_db;
+
+INSERT INTO roles (id, nombre) VALUES (1, 'administrador'), (2, 'vendedor') ON DUPLICATE KEY UPDATE id=id;
+
+INSERT INTO permisos (id, nombre) VALUES
+(1, 'ver_prospectos_todos'), (2, 'ver_prospectos_propios'), (3, 'gestionar_prospectos_todos'), (4, 'gestionar_prospectos_propios'),
+(5, 'ver_ventas_todas'), (6, 'ver_ventas_propias'), (7, 'gestionar_ventas_todas'), (8, 'gestionar_ventas_propias'),
+(9, 'ver_seguros_todos'), (10, 'ver_seguros_propios'), (11, 'gestionar_seguros_todos'), (12, 'gestionar_seguros_propios'),
+(13, 'ver_dashboard_todos'), (14, 'ver_dashboard_propio'), (15, 'ver_roles'), (16, 'gestionar_roles'),
+(17, 'ver_empleados'), (18, 'gestionar_empleados'), (19, 'ver_clientes'), (20, 'gestionar_clientes')
+ON DUPLICATE KEY UPDATE id=id;
+
+INSERT INTO rol_permiso (rol_id, permiso_id) VALUES
+(1, 1), (1, 3), (1, 5), (1, 7), (1, 9), (1, 11), (1, 13), (1, 15), (1, 16), (1, 17), (1, 18), (1, 19), (1, 20),
+(2, 2), (2, 4), (2, 6), (2, 8), (2, 10), (2, 12), (2, 14), (2, 19), (2, 20)
+ON DUPLICATE KEY UPDATE rol_id=rol_id;
+
+INSERT INTO empleados (id, nombre, email, password, rol_id) VALUES
+(1, 'Juan Pérez', 'juan.perez@automotriz.com', '$2y$10$Jin9DjsA2VJG8Xtcve2y2evddnoEiIl96KVtAz6FJ9IF4cck5mcja', 2),
+(2, 'María Gómez', 'maria.gomez@automotriz.com', '$2y$10$Jin9DjsA2VJG8Xtcve2y2evddnoEiIl96KVtAz6FJ9IF4cck5mcja', 2),
+(3, 'Carlos Rodríguez', 'carlos.rodriguez@automotriz.com', '$2y$10$Jin9DjsA2VJG8Xtcve2y2evddnoEiIl96KVtAz6FJ9IF4cck5mcja', 1)
+ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO ventas (id, prospecto_id, vehiculo_id, empleado_id, monto, estado) VALUES
 (1, 4, 4, 2, 28000.00, 'efectiva'),
