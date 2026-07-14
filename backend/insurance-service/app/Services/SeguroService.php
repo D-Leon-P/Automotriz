@@ -73,7 +73,7 @@ class SeguroService
     protected function notifyN8n($action, $seguro)
     {
         try {
-            $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook-test/seguros');
+            $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook/seguros');
             Http::timeout(2)->post($n8nUrl, [
                 'action' => $action,
                 'seguro' => $seguro->load('venta')->toArray(),
