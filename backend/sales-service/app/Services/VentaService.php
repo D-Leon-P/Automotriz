@@ -149,7 +149,7 @@ class VentaService
     protected function notifyN8n($action, $venta)
     {
         try {
-            $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook/ventas');
+            $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook-test/ventas');
             Http::timeout(2)->post($n8nUrl, [
                 'action' => $action,
                 'venta' => $venta->load(['prospecto', 'vehiculo', 'empleado'])->toArray(),

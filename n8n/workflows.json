@@ -117,7 +117,7 @@
     {
       "parameters": {
         "dataType": "string",
-        "value1": "={{ $json.action }}",
+        "value1": "={{ $json.body.action }}",
         "rules": {
           "rules": [
             {
@@ -140,15 +140,15 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO sales_db.prospectos (id, nombre, email, telefono, vehiculo_id, etapa, empleado_id) VALUES ({{ $json.prospecto.id }}, '{{ $json.prospecto.nombre }}', '{{ $json.prospecto.email }}', '{{ $json.prospecto.telefono }}', {{ $json.prospecto.vehiculo_id }}, '{{ $json.prospecto.etapa }}', {{ $json.prospecto.empleado_id }}) ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), email=VALUES(email), telefono=VALUES(telefono), vehiculo_id=VALUES(vehiculo_id), etapa=VALUES(etapa), empleado_id=VALUES(empleado_id); \n\nINSERT INTO dashboard_db.prospectos (id, nombre, email, telefono, vehiculo_id, etapa, empleado_id) VALUES ({{ $json.prospecto.id }}, '{{ $json.prospecto.nombre }}', '{{ $json.prospecto.email }}', '{{ $json.prospecto.telefono }}', {{ $json.prospecto.vehiculo_id }}, '{{ $json.prospecto.etapa }}', {{ $json.prospecto.empleado_id }}) ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), email=VALUES(email), telefono=VALUES(telefono), vehiculo_id=VALUES(vehiculo_id), etapa=VALUES(etapa), empleado_id=VALUES(empleado_id);"
+        "query": "=INSERT INTO sales_db.prospectos (id, nombre, email, telefono, vehiculo_id, etapa, empleado_id, deleted_at) VALUES ({{ $json.body.prospecto.id }}, '{{ $json.body.prospecto.nombre }}', '{{ $json.body.prospecto.email }}', '{{ $json.body.prospecto.telefono }}', {{ $json.body.prospecto.vehiculo_id }}, '{{ $json.body.prospecto.etapa }}', {{ $json.body.prospecto.empleado_id }}, {{ $json.body.prospecto.deleted_at ? \"'\" + $json.body.prospecto.deleted_at + \"'\" : 'NULL' }}) ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), email=VALUES(email), telefono=VALUES(telefono), vehiculo_id=VALUES(vehiculo_id), etapa=VALUES(etapa), empleado_id=VALUES(empleado_id), deleted_at=VALUES(deleted_at);"
       },
       "id": "e2c8d1a3-b4c5-4d5e-8f7a-9a0b1c2d3e4d",
-      "name": "Sync: Upsert Prospecto",
+      "name": "Sync: Upsert Prospecto (Sales)",
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 1,
       "position": [
         500,
-        350
+        320
       ],
       "credentials": {
         "mySql": {
@@ -160,14 +160,54 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=DELETE FROM sales_db.prospectos WHERE id = {{ $json.prospecto.id }};\nDELETE FROM dashboard_db.prospectos WHERE id = {{ $json.prospecto.id }};"
+        "query": "=INSERT INTO dashboard_db.prospectos (id, nombre, email, telefono, vehiculo_id, etapa, empleado_id, deleted_at) VALUES ({{ $('Webhook: Evento Prospecto').item.json.body.prospecto.id }}, '{{ $('Webhook: Evento Prospecto').item.json.body.prospecto.nombre }}', '{{ $('Webhook: Evento Prospecto').item.json.body.prospecto.email }}', '{{ $('Webhook: Evento Prospecto').item.json.body.prospecto.telefono }}', {{ $('Webhook: Evento Prospecto').item.json.body.prospecto.vehiculo_id }}, '{{ $('Webhook: Evento Prospecto').item.json.body.prospecto.etapa }}', {{ $('Webhook: Evento Prospecto').item.json.body.prospecto.empleado_id }}, {{ $('Webhook: Evento Prospecto').item.json.body.prospecto.deleted_at ? \"'\" + $('Webhook: Evento Prospecto').item.json.body.prospecto.deleted_at + \"'\" : 'NULL' }}) ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), email=VALUES(email), telefono=VALUES(telefono), vehiculo_id=VALUES(vehiculo_id), etapa=VALUES(etapa), empleado_id=VALUES(empleado_id), deleted_at=VALUES(deleted_at);"
+      },
+      "id": "e2c8d1a3-b4c5-4d5e-8f7a-9a0b1c2d3e5d",
+      "name": "Sync: Upsert Prospecto (Dashboard)",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        700,
+        320
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "mysql-conn-id",
+          "name": "automotriz_db"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=DELETE FROM sales_db.prospectos WHERE id = {{ $json.body.prospecto.id }};"
       },
       "id": "e2c8d1a3-b4c5-4d5e-8f7a-9a0b1c2d3e4c",
-      "name": "Sync: Delete Prospecto",
+      "name": "Sync: Delete Prospecto (Sales)",
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 1,
       "position": [
         500,
+        480
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "mysql-conn-id",
+          "name": "automotriz_db"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=DELETE FROM dashboard_db.prospectos WHERE id = {{ $('Webhook: Evento Prospecto').item.json.body.prospecto.id }};"
+      },
+      "id": "e2c8d1a3-b4c5-4d5e-8f7a-9a0b1c2d3e5c",
+      "name": "Sync: Delete Prospecto (Dashboard)",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        700,
         480
       ],
       "credentials": {
@@ -188,14 +228,14 @@
       "typeVersion": 1,
       "position": [
         100,
-        600
+        650
       ],
       "webhookId": "0b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f"
     },
     {
       "parameters": {
         "dataType": "string",
-        "value1": "={{ $json.action }}",
+        "value1": "={{ $json.body.action }}",
         "rules": {
           "rules": [
             {
@@ -212,21 +252,21 @@
       "typeVersion": 1,
       "position": [
         300,
-        630
+        680
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO insurance_db.ventas (id, prospecto_id, vehiculo_id, empleado_id, monto, estado) VALUES ({{ $json.venta.id }}, {{ $json.venta.prospecto_id }}, {{ $json.venta.vehiculo_id }}, {{ $json.venta.empleado_id }}, {{ $json.venta.monto }}, '{{ $json.venta.estado }}') ON DUPLICATE KEY UPDATE prospecto_id=VALUES(prospecto_id), vehiculo_id=VALUES(vehiculo_id), empleado_id=VALUES(empleado_id), monto=VALUES(monto), estado=VALUES(estado);\n\nINSERT INTO dashboard_db.ventas (id, prospecto_id, vehiculo_id, empleado_id, monto, estado, motivo_perdida) VALUES ({{ $json.venta.id }}, {{ $json.venta.prospecto_id }}, {{ $json.venta.vehiculo_id }}, {{ $json.venta.empleado_id }}, {{ $json.venta.monto }}, '{{ $json.venta.estado }}', {{ $json.venta.motivo_perdida ? \"'\" + $json.venta.motivo_perdida + \"'\" : 'NULL' }}) ON DUPLICATE KEY UPDATE prospecto_id=VALUES(prospecto_id), vehiculo_id=VALUES(vehiculo_id), empleado_id=VALUES(empleado_id), monto=VALUES(monto), estado=VALUES(estado), motivo_perdida=VALUES(motivo_perdida);"
+        "query": "=INSERT INTO insurance_db.ventas (id, prospecto_id, vehiculo_id, empleado_id, monto, estado, deleted_at) VALUES ({{ $json.body.venta.id }}, {{ $json.body.venta.prospecto_id }}, {{ $json.body.venta.vehiculo_id }}, {{ $json.body.venta.empleado_id }}, {{ $json.body.venta.monto }}, '{{ $json.body.venta.estado }}', {{ $json.body.venta.deleted_at ? \"'\" + $json.body.venta.deleted_at + \"'\" : 'NULL' }}) ON DUPLICATE KEY UPDATE prospecto_id=VALUES(prospecto_id), vehiculo_id=VALUES(vehiculo_id), empleado_id=VALUES(empleado_id), monto=VALUES(monto), estado=VALUES(estado), deleted_at=VALUES(deleted_at);"
       },
       "id": "f3c9d2a4-b5c6-4d5e-8f7a-9a0b1c2d3e4d",
-      "name": "Sync: Upsert Venta",
+      "name": "Sync: Upsert Venta (Insurance)",
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 1,
       "position": [
         500,
-        600
+        620
       ],
       "credentials": {
         "mySql": {
@@ -238,15 +278,35 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT stock FROM sales_db.vehiculos WHERE id = {{ $json.venta.vehiculo_id }};"
+        "query": "=INSERT INTO dashboard_db.ventas (id, prospecto_id, vehiculo_id, empleado_id, monto, estado, motivo_perdida, deleted_at) VALUES ({{ $('Webhook: Evento Venta').item.json.body.venta.id }}, {{ $('Webhook: Evento Venta').item.json.body.venta.prospecto_id }}, {{ $('Webhook: Evento Venta').item.json.body.venta.vehiculo_id }}, {{ $('Webhook: Evento Venta').item.json.body.venta.empleado_id }}, {{ $('Webhook: Evento Venta').item.json.body.venta.monto }}, '{{ $('Webhook: Evento Venta').item.json.body.venta.estado }}', {{ $('Webhook: Evento Venta').item.json.body.venta.motivo_perdida ? \"'\" + $('Webhook: Evento Venta').item.json.body.venta.motivo_perdida + \"'\" : 'NULL' }}, {{ $('Webhook: Evento Venta').item.json.body.venta.deleted_at ? \"'\" + $('Webhook: Evento Venta').item.json.body.venta.deleted_at + \"'\" : 'NULL' }}) ON DUPLICATE KEY UPDATE prospecto_id=VALUES(prospecto_id), vehiculo_id=VALUES(vehiculo_id), empleado_id=VALUES(empleado_id), monto=VALUES(monto), estado=VALUES(estado), motivo_perdida=VALUES(motivo_perdida), deleted_at=VALUES(deleted_at);"
+      },
+      "id": "f3c9d2a4-b5c6-4d5e-8f7a-9a0b1c2d3e5d",
+      "name": "Sync: Upsert Venta (Dashboard)",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        700,
+        620
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "mysql-conn-id",
+          "name": "automotriz_db"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT stock FROM sales_db.vehiculos WHERE id = {{ $('Webhook: Evento Venta').item.json.body.venta.vehiculo_id }};"
       },
       "id": "f3c9d2a4-b5c6-4d5e-8f7a-9a0b1c2d3e4b",
       "name": "Sync: Consultar Stock Venta",
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 1,
       "position": [
-        700,
-        600
+        900,
+        620
       ],
       "credentials": {
         "mySql": {
@@ -258,15 +318,15 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=UPDATE prospects_db.vehiculos SET stock = {{ $json.stock }} WHERE id = {{ $json.venta.vehiculo_id }};"
+        "query": "=UPDATE prospects_db.vehiculos SET stock = {{ $json.stock }} WHERE id = {{ $('Webhook: Evento Venta').item.json.body.venta.vehiculo_id }};"
       },
       "id": "f3c9d2a4-b5c6-4d5e-8f7a-9a0b1c2d3e4a",
       "name": "Sync: Actualizar Catalogo Stock",
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 1,
       "position": [
-        900,
-        600
+        1100,
+        620
       ],
       "credentials": {
         "mySql": {
@@ -278,15 +338,35 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=DELETE FROM insurance_db.ventas WHERE id = {{ $json.venta.id }};\nDELETE FROM dashboard_db.ventas WHERE id = {{ $json.venta.id }};"
+        "query": "=DELETE FROM insurance_db.ventas WHERE id = {{ $json.body.venta.id }};"
       },
       "id": "f3c9d2a4-b5c6-4d5e-8f7a-9a0b1c2d3e4c",
-      "name": "Sync: Delete Venta",
+      "name": "Sync: Delete Venta (Insurance)",
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 1,
       "position": [
         500,
-        730
+        780
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "mysql-conn-id",
+          "name": "automotriz_db"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=DELETE FROM dashboard_db.ventas WHERE id = {{ $('Webhook: Evento Venta').item.json.body.venta.id }};"
+      },
+      "id": "f3c9d2a4-b5c6-4d5e-8f7a-9a0b1c2d3e5c",
+      "name": "Sync: Delete Venta (Dashboard)",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        700,
+        780
       ],
       "credentials": {
         "mySql": {
@@ -306,14 +386,14 @@
       "typeVersion": 1,
       "position": [
         100,
-        850
+        950
       ],
       "webhookId": "1b1c2d3e-4f5a-6b7c-8d9e-0a1b2c3d4e5f"
     },
     {
       "parameters": {
         "dataType": "string",
-        "value1": "={{ $json.action }}",
+        "value1": "={{ $json.body.action }}",
         "rules": {
           "rules": [
             {
@@ -330,21 +410,21 @@
       "typeVersion": 1,
       "position": [
         300,
-        880
+        980
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO dashboard_db.seguros (id, venta_id, tipo_seguro, prima_esperada, prima_real, estado) VALUES ({{ $json.seguro.id }}, {{ $json.seguro.venta_id }}, '{{ $json.seguro.tipo_seguro }}', {{ $json.seguro.prima_esperada }}, {{ $json.seguro.prima_real ?? 'NULL' }}, '{{ $json.seguro.estado }}') ON DUPLICATE KEY UPDATE venta_id=VALUES(venta_id), tipo_seguro=VALUES(tipo_seguro), prima_esperada=VALUES(prima_esperada), prima_real=VALUES(prima_real), estado=VALUES(estado);"
+        "query": "=INSERT INTO dashboard_db.seguros (id, venta_id, tipo_seguro, prima_esperada, prima_real, estado, deleted_at) VALUES ({{ $json.body.seguro.id }}, {{ $json.body.seguro.venta_id }}, '{{ $json.body.seguro.tipo_seguro }}', {{ $json.body.seguro.prima_esperada }}, {{ $json.body.seguro.prima_real ?? 'NULL' }}, '{{ $json.body.seguro.estado }}', {{ $json.body.seguro.deleted_at ? \"'\" + $json.body.seguro.deleted_at + \"'\" : 'NULL' }}) ON DUPLICATE KEY UPDATE venta_id=VALUES(venta_id), tipo_seguro=VALUES(tipo_seguro), prima_esperada=VALUES(prima_esperada), prima_real=VALUES(prima_real), estado=VALUES(estado), deleted_at=VALUES(deleted_at);"
       },
       "id": "g4d0e3b5-c6d7-4e5f-8f7a-9a0b1c2d3e4d",
-      "name": "Sync: Upsert Seguro",
+      "name": "Sync: Upsert Seguro (Dashboard)",
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 1,
       "position": [
         500,
-        850
+        920
       ],
       "credentials": {
         "mySql": {
@@ -356,15 +436,15 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=DELETE FROM dashboard_db.seguros WHERE id = {{ $json.seguro.id }};"
+        "query": "=DELETE FROM dashboard_db.seguros WHERE id = {{ $json.body.seguro.id }};"
       },
       "id": "g4d0e3b5-c6d7-4e5f-8f7a-9a0b1c2d3e4c",
-      "name": "Sync: Delete Seguro",
+      "name": "Sync: Delete Seguro (Dashboard)",
       "type": "n8n-nodes-base.mySql",
       "typeVersion": 1,
       "position": [
         500,
-        980
+        1050
       ],
       "credentials": {
         "mySql": {
@@ -487,7 +567,17 @@
         ]
       ]
     },
-    "Sync: Upsert Venta": {
+    "Sync: Upsert Venta (Insurance)": {
+      "main": [
+        [
+          {
+            "node": "Sync: Upsert Venta (Dashboard)",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync: Upsert Venta (Dashboard)": {
       "main": [
         [
           {
@@ -505,6 +595,16 @@
             "node": "Sync: Actualizar Catalogo Stock",
             "index": 0,
             "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Delete Venta (Insurance)": {
+      "main": [
+        [
+          {
+            "node": "Sync: Delete Venta (Dashboard)",
+            "index": 0
           }
         ]
       ]

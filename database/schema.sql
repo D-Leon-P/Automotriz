@@ -492,6 +492,9 @@ INSERT INTO seguros (id, venta_id, tipo_seguro, prima_esperada, prima_real, esta
 ON DUPLICATE KEY UPDATE id=id;
 
 -- Grant privileges to the user automotriz_user for all microservice databases
+-- ========================================================
+-- OTORGAR PRIVILEGIOS AL USUARIO automotriz_user
+-- ========================================================
 GRANT ALL PRIVILEGES ON prospects_db.* TO 'automotriz_user'@'%';
 GRANT ALL PRIVILEGES ON sales_db.* TO 'automotriz_user'@'%';
 GRANT ALL PRIVILEGES ON insurance_db.* TO 'automotriz_user'@'%';
