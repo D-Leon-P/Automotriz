@@ -64,6 +64,16 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async fetchProfile() {
+      try {
+        const response = await axios.get('/api/auth/me');
+        this.user = response.data;
+        localStorage.setItem('auth_user', JSON.stringify(this.user));
+      } catch (err) {
+        console.error('Error al actualizar el perfil de usuario:', err);
+      }
+    },
+
     logout() {
       this.user = null;
       localStorage.removeItem('auth_user');

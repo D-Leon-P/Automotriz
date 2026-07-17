@@ -215,6 +215,17 @@ services:
     networks:
       - automotriz-network
 
+  # 9. Servidor WebSocket
+  websocket-service:
+    build:
+      context: ./backend/websocket-service
+    container_name: websocket-service
+    restart: unless-stopped
+    ports:
+      - "6001:6001"
+    networks:
+      - automotriz-network
+
 networks:
   automotriz-network:
     driver: bridge

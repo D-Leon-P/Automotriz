@@ -85,6 +85,19 @@ class EmpleadoController extends Controller
 
         $empleado->update($data);
 
+        // Notificar cambios de empleado por WebSocket
+        try {
+            \Illuminate\Support\Facades\Http::timeout(1)->post('http://websocket-service:6001/publish', [
+                'event' => 'employee.updated',
+                'data' => [
+                    'empleado_id' => (int)$id,
+                    'rol_id' => (int)$request->rol_id
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error al publicar en WebSocket: " . $e->getMessage());
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Colaborador actualizado exitosamente.',

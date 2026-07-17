@@ -102,7 +102,8 @@
     {
       "parameters": {
         "path": "prospectos",
-        "options": {}
+        "options": {},
+        "httpMethod": "POST"
       },
       "id": "e2c8d1a3-b4c5-4d5e-8f7a-9a0b1c2d3e4f",
       "name": "Webhook: Evento Prospecto",
@@ -220,7 +221,8 @@
     {
       "parameters": {
         "path": "ventas",
-        "options": {}
+        "options": {},
+        "httpMethod": "POST"
       },
       "id": "f3c9d2a4-b5c6-4d5e-8f7a-9a0b1c2d3e4f",
       "name": "Webhook: Evento Venta",
@@ -378,7 +380,8 @@
     {
       "parameters": {
         "path": "seguros",
-        "options": {}
+        "options": {},
+        "httpMethod": "POST"
       },
       "id": "g4d0e3b5-c6d7-4e5f-8f7a-9a0b1c2d3e4f",
       "name": "Webhook: Evento Seguro",
@@ -463,6 +466,24 @@
         400,
         280
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://websocket-service:6001/publish",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"event\": \"dashboard.refresh\", \"data\": {}}",
+        "options": {}
+      },
+      "id": "w1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6e",
+      "name": "Publish: WebSocket Refresh",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1350,
+        500
+      ]
     }
   ],
   "connections": {
@@ -519,14 +540,14 @@
       "main": [
         [
           {
-            "node": "Sync: Upsert Prospecto",
+            "node": "Sync: Upsert Prospecto (Sales)",
             "index": 0,
             "type": "main"
           }
         ],
         [
           {
-            "node": "Sync: Delete Prospecto",
+            "node": "Sync: Delete Prospecto (Sales)",
             "index": 0,
             "type": "main"
           }
@@ -553,14 +574,14 @@
       "main": [
         [
           {
-            "node": "Sync: Upsert Venta",
+            "node": "Sync: Upsert Venta (Insurance)",
             "index": 0,
             "type": "main"
           }
         ],
         [
           {
-            "node": "Sync: Delete Venta",
+            "node": "Sync: Delete Venta (Insurance)",
             "index": 0,
             "type": "main"
           }
@@ -629,14 +650,102 @@
       "main": [
         [
           {
-            "node": "Sync: Upsert Seguro",
+            "node": "Sync: Upsert Seguro (Dashboard)",
             "index": 0,
             "type": "main"
           }
         ],
         [
           {
-            "node": "Sync: Delete Seguro",
+            "node": "Sync: Delete Seguro (Dashboard)",
+            "index": 0,
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Upsert Prospecto (Sales)": {
+      "main": [
+        [
+          {
+            "node": "Sync: Upsert Prospecto (Dashboard)",
+            "index": 0,
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Delete Prospecto (Sales)": {
+      "main": [
+        [
+          {
+            "node": "Sync: Delete Prospecto (Dashboard)",
+            "index": 0,
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Upsert Prospecto (Dashboard)": {
+      "main": [
+        [
+          {
+            "node": "Publish: WebSocket Refresh",
+            "index": 0,
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Delete Prospecto (Dashboard)": {
+      "main": [
+        [
+          {
+            "node": "Publish: WebSocket Refresh",
+            "index": 0,
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Actualizar Catalogo Stock": {
+      "main": [
+        [
+          {
+            "node": "Publish: WebSocket Refresh",
+            "index": 0,
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Delete Venta (Dashboard)": {
+      "main": [
+        [
+          {
+            "node": "Publish: WebSocket Refresh",
+            "index": 0,
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Upsert Seguro (Dashboard)": {
+      "main": [
+        [
+          {
+            "node": "Publish: WebSocket Refresh",
+            "index": 0,
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sync: Delete Seguro (Dashboard)": {
+      "main": [
+        [
+          {
+            "node": "Publish: WebSocket Refresh",
             "index": 0,
             "type": "main"
           }

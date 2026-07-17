@@ -12,6 +12,11 @@ export default defineConfig({
       '/api': {
         target: 'http://nginx-gateway',
         changeOrigin: true
+      },
+      '/ws': {
+        target: 'ws://nginx-gateway',
+        ws: true,
+        changeOrigin: true
       }
     }
   }

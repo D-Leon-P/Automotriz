@@ -78,7 +78,7 @@ class RolController extends Controller
             'permisos.*' => 'integer|exists:permisos,id'
         ]);
 
-        return DB::transaction(function () use ($request, $rol) {
+        $response = DB::transaction(function () use ($request, $rol) {
             $rol->update([
                 'nombre' => strtolower($request->nombre)
             ]);
@@ -90,6 +90,18 @@ class RolController extends Controller
                 'data' => $rol->load('permisos')
             ]);
         });
+
+        // Notificar cambios de permisos por WebSocket tras transacción exitosa
+        try {
+            \Illuminate\Support\Facades\Http::timeout(1)->post('http://websocket-service:6001/publish', [
+                'event' => 'permissions.updated',
+                'data' => ['rol_id' => (int)$id]
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error al publicar en WebSocket: " . $e->getMessage());
+        }
+
+        return $response;
     }
 
     public function destroy($id)
