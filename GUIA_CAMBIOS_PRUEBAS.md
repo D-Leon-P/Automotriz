@@ -45,3 +45,9 @@ k6 run tests/stress-test.js
 
 ## En caso fallen las pruebas y el error sea 500 el stock se ha agotado, ejecutar: 
 docker exec -i automotriz-db mysql -u root -prootpassword -e "UPDATE prospects_db.vehiculos SET stock = 140; UPDATE sales_db.vehiculos SET stock = 140;"
+
+## Para insertar los seeds de prospectos
+Get-Content ./database/stress_seeds.sql | docker exec -i automotriz-db mysql -u root -prootpassword
+
+## Para generar los seeds de prospectos
+docker compose exec -T prospects-service php artisan db:seed

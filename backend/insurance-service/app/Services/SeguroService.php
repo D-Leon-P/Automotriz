@@ -34,6 +34,11 @@ class SeguroService
             throw new \Exception("No autorizado para operar con esta venta.");
         }
 
+        // Validar que la venta no tenga ya un seguro registrado
+        if (\Illuminate\Support\Facades\DB::table('seguros')->where('venta_id', $data['venta_id'])->whereNull('deleted_at')->exists()) {
+            throw new \Exception("La venta ya tiene un seguro asociado.");
+        }
+
         $seguro = $this->seguroRepository->create($data);
         $this->notifyN8n('created', $seguro);
         return $seguro;

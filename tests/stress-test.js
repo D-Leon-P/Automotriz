@@ -1,6 +1,12 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
+import { Counter } from 'k6/metrics';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
+import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js';
+
+// Métricas personalizadas para el reporte visual
+const ventasExitosas = new Counter('ventas_creadas_201');
+const ventasRechazadas = new Counter('ventas_rechazadas_400');
 
 // ============================================================
 // PRUEBA DE ESTRÉS: 50 y 100 Ventas Simultáneas
@@ -76,8 +82,8 @@ export default function (data) {
   const vehiculoIndex = __VU % data.vehiculos.length;
   const vehiculo = data.vehiculos[vehiculoIndex];
 
-  // Seleccionar prospecto aleatorio (IDs 1-7)
-  const randomProspectId = Math.floor(Math.random() * 7) + 1;
+  // Seleccionar prospecto aleatorio (IDs 1-6000)
+  const randomProspectId = Math.floor(Math.random() * 6000) + 1;
 
   // 70% ventas efectivas / 30% fallidas
   const esEfectiva = Math.random() > 0.3;
@@ -103,9 +109,17 @@ export default function (data) {
 
   const res = http.post(`${BASE_URL}/api/ventas`, payload, params);
 
-  // Aserciones: 201 (creada) o 400 (stock agotado / prospecto ya en cierre)
+  // Incrementar métricas según el tipo de respuesta
+  if (res.status === 201) {
+    ventasExitosas.add(1);
+  } else if (res.status === 400) {
+    ventasRechazadas.add(1);
+  }
+
+  // Aserciones
   check(res, {
     'status es 201 o 400 (comportamiento esperado)': (r) => r.status === 201 || r.status === 400,
+    'venta creada exitosamente (201)': (r) => r.status === 201,
     'tiempo de respuesta < 2s': (r) => r.timings.duration < 2000,
   });
 
@@ -118,6 +132,8 @@ export function handleSummary(data) {
   const summary = {
     // Métricas globales
     total_requests: data.metrics.http_reqs?.values?.count || 0,
+    ventas_creadas: data.metrics.ventas_creadas_201?.values?.count || 0,
+    ventas_rechazadas: data.metrics.ventas_rechazadas_400?.values?.count || 0,
     avg_duration_ms: data.metrics.http_req_duration?.values?.avg?.toFixed(2) || 0,
     p50_ms: data.metrics.http_req_duration?.values?.['p(50)']?.toFixed(2) || 0,
     p75_ms: data.metrics.http_req_duration?.values?.['p(75)']?.toFixed(2) || 0,
@@ -140,6 +156,7 @@ export function handleSummary(data) {
 
   return {
     'tests/reportes/stress-result.json': JSON.stringify(summary, null, 2),
+    'tests/reportes/stress-report.html': htmlReport(data),
     stdout: textSummary(data, { indent: ' ', enableColors: true }),
   };
 }

@@ -1,0 +1,102 @@
+[
+  {
+    "event_time": "2026-07-20T22:51:29.507Z",
+    "thread_id": 48925,
+    "argument": "automotriz_user@172.18.0.2 on prospects_db using TCP/IP"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48905,
+    "argument": "COMMIT"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48906,
+    "argument": "COMMIT"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48905,
+    "argument": ""
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48906,
+    "argument": ""
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48905,
+    "argument": "select * from `jobs` where `queue` = 'default' and ((`reserved_at` is null and `available_at` <= 1784587888) or (`reserved_at` <= 1784587798)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48906,
+    "argument": "select * from `jobs` where `queue` = 'default' and ((`reserved_at` is null and `available_at` <= 1784587888) or (`reserved_at` <= 1784587798)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48905,
+    "argument": "select * from `jobs` where `queue` = ? and ((`reserved_at` is null and `available_at` <= ?) or (`reserved_at` <= ?)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48906,
+    "argument": "select * from `jobs` where `queue` = ? and ((`reserved_at` is null and `available_at` <= ?) or (`reserved_at` <= ?)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48906,
+    "argument": "select * from `jobs` where `queue` = ? and ((`reserved_at` is null and `available_at` <= ?) or (`reserved_at` <= ?)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.578Z",
+    "thread_id": 48905,
+    "argument": "select * from `jobs` where `queue` = ? and ((`reserved_at` is null and `available_at` <= ?) or (`reserved_at` <= ?)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.577Z",
+    "thread_id": 48906,
+    "argument": "START TRANSACTION"
+  },
+  {
+    "event_time": "2026-07-20T22:51:28.577Z",
+    "thread_id": 48905,
+    "argument": "START TRANSACTION"
+  },
+  {
+    "event_time": "2026-07-20T22:51:25.573Z",
+    "thread_id": 48905,
+    "argument": "COMMIT"
+  },
+  {
+    "event_time": "2026-07-20T22:51:25.573Z",
+    "thread_id": 48906,
+    "argument": "COMMIT"
+  },
+  {
+    "event_time": "2026-07-20T22:51:25.573Z",
+    "thread_id": 48905,
+    "argument": ""
+  },
+  {
+    "event_time": "2026-07-20T22:51:25.573Z",
+    "thread_id": 48906,
+    "argument": ""
+  },
+  {
+    "event_time": "2026-07-20T22:51:25.573Z",
+    "thread_id": 48905,
+    "argument": "select * from `jobs` where `queue` = 'default' and ((`reserved_at` is null and `available_at` <= 1784587885) or (`reserved_at` <= 1784587795)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  },
+  {
+    "event_time": "2026-07-20T22:51:25.573Z",
+    "thread_id": 48905,
+    "argument": "select * from `jobs` where `queue` = ? and ((`reserved_at` is null and `available_at` <= ?) or (`reserved_at` <= ?)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  },
+  {
+    "event_time": "2026-07-20T22:51:25.573Z",
+    "thread_id": 48906,
+    "argument": "select * from `jobs` where `queue` = 'default' and ((`reserved_at` is null and `available_at` <= 1784587885) or (`reserved_at` <= 1784587795)) order by `id` asc limit 1 FOR UPDATE SKIP LOCKED"
+  }
+]

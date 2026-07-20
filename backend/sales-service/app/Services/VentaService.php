@@ -37,6 +37,10 @@ class VentaService
                 throw new \Exception("No autorizado para operar con este prospecto.");
             }
             
+            // Validar que el prospecto no tenga ya una venta registrada
+            if (DB::table('ventas')->where('prospecto_id', $data['prospecto_id'])->whereNull('deleted_at')->exists()) {
+                throw new \Exception("El prospecto ya tiene una venta asociada.");
+            }
             // 2. Obtener el vehículo
             $vehiculo = Vehiculo::findOrFail($data['vehiculo_id']);
 

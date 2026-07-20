@@ -136,10 +136,19 @@ class SeguroControllerTest extends TestCase
     {
         Http::fake();
 
+        $ventaNueva = Venta::create([
+            'id' => 101,
+            'prospecto_id' => 1,
+            'vehiculo_id' => 1,
+            'empleado_id' => $this->vendedor1->id,
+            'monto' => 30000.00,
+            'estado' => 'efectiva'
+        ]);
+
         $response = $this->withHeaders([
             'Authorization' => "Bearer {$this->vendedor1Token}"
         ])->postJson('/api/seguros', [
-            'venta_id' => $this->venta1->id,
+            'venta_id' => $ventaNueva->id,
             'tipo_seguro' => 'terceros',
             'prima_esperada' => 800.00,
             'prima_real' => 800.00,
@@ -149,7 +158,7 @@ class SeguroControllerTest extends TestCase
         $response->assertStatus(201);
         $this->assertDatabaseHas('seguros', [
             'tipo_seguro' => 'terceros',
-            'venta_id' => $this->venta1->id
+            'venta_id' => $ventaNueva->id
         ]);
     }
 
@@ -208,10 +217,19 @@ class SeguroControllerTest extends TestCase
     {
         Http::fake();
 
+        $ventaNuevaXss = Venta::create([
+            'id' => 102,
+            'prospecto_id' => 1,
+            'vehiculo_id' => 1,
+            'empleado_id' => $this->vendedor1->id,
+            'monto' => 30000.00,
+            'estado' => 'efectiva'
+        ]);
+
         $response = $this->withHeaders([
             'Authorization' => "Bearer {$this->vendedor1Token}"
         ])->postJson('/api/seguros', [
-            'venta_id' => $this->venta1->id,
+            'venta_id' => $ventaNuevaXss->id,
             'tipo_seguro' => '<script>alert("hack")</script> Rímac',
             'prima_esperada' => 1200.00,
             'prima_real' => 1200.00,
@@ -222,5 +240,22 @@ class SeguroControllerTest extends TestCase
         $this->assertDatabaseHas('seguros', [
             'tipo_seguro' => 'alert(&quot;hack&quot;) Rímac' // Sanitized
         ]);
+    }
+
+    public function test_vendedor_no_puede_registrar_seguro_duplicado_para_la_misma_venta()
+    {
+        // Seguro1 ya existe para venta1 en el setUp()
+
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer {$this->vendedor1Token}"
+        ])->postJson('/api/seguros', [
+            'venta_id' => $this->venta1->id, // Venta1 ya tiene seguro1
+            'tipo_seguro' => 'segundo_seguro',
+            'prima_esperada' => 1000.00,
+            'prima_real' => 1000.00,
+            'estado' => 'prospectado'
+        ]);
+
+        $response->assertStatus(400); // Bad Request (Exception caught)
     }
 }

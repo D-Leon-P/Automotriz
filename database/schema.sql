@@ -1,6 +1,9 @@
 -- ========================================================
 -- 1. BASE DE DATOS: prospects_db
 -- ========================================================
+SET GLOBAL log_output = 'TABLE';
+SET GLOBAL general_log = 'ON';
+
 CREATE DATABASE IF NOT EXISTS prospects_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE prospects_db;
 SET NAMES utf8mb4;
@@ -583,4 +586,5 @@ GRANT ALL PRIVILEGES ON prospects_db.* TO 'automotriz_user'@'%';
 GRANT ALL PRIVILEGES ON sales_db.* TO 'automotriz_user'@'%';
 GRANT ALL PRIVILEGES ON insurance_db.* TO 'automotriz_user'@'%';
 GRANT ALL PRIVILEGES ON dashboard_db.* TO 'automotriz_user'@'%';
+GRANT SELECT ON mysql.general_log TO 'automotriz_user'@'%';
 FLUSH PRIVILEGES;

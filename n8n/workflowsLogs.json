@@ -1,0 +1,81 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "b3e4f5a6-7b8c-9d0e-1f2a-3b4c5d6e7f8a",
+      "name": "Schedule Trigger (5 min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT event_time, thread_id, CONVERT(argument USING utf8mb4) AS argument FROM mysql.general_log WHERE CONVERT(argument USING utf8mb4) NOT LIKE '%general_log%' ORDER BY event_time DESC LIMIT 20;"
+      },
+      "id": "c4d5e6f7-8a9b-0c1d-2e3f-4a5b6c7d8e9f",
+      "name": "Extraer Log de MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [
+        350,
+        300
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "mysql-conn-id",
+          "name": "automotriz_db"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst logData = items.map(item => item.json);\n\ntry {\n  fs.writeFileSync('/data/mysql_audit.json', JSON.stringify(logData, null, 2), 'utf8');\n} catch (error) {\n  console.error('Error al escribir el archivo de log:', error);\n}\n\nreturn items;"
+      },
+      "id": "e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b",
+      "name": "Guardar Logs en Archivo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger (5 min)": {
+      "main": [
+        [
+          {
+            "node": "Extraer Log de MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Log de MySQL": {
+      "main": [
+        [
+          {
+            "node": "Guardar Logs en Archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

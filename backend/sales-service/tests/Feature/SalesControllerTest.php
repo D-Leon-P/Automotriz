@@ -130,6 +130,31 @@ class SalesControllerTest extends TestCase
         Queue::assertPushed(NotifyN8nJob::class);
     }
 
+    public function test_vendedor_no_puede_registrar_venta_duplicada_para_el_mismo_prospecto()
+    {
+        // 1. Registrar una venta para el prospecto
+        Venta::create([
+            'prospecto_id' => $this->prospecto->id,
+            'vehiculo_id' => $this->vehiculo->id,
+            'empleado_id' => $this->vendedor1->id,
+            'monto' => 31000.00,
+            'estado' => 'efectiva'
+        ]);
+        
+        // 2. Intentar registrar otra venta para el mismo prospecto via controller
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer {$this->vendedor1Token}"
+        ])->postJson('/api/ventas', [
+            'prospecto_id' => $this->prospecto->id,
+            'vehiculo_id' => $this->vehiculo->id,
+            'monto' => 31000.00,
+            'estado' => 'efectiva'
+        ]);
+
+        // Debe fallar con error de servidor/procedimiento (400)
+        $response->assertStatus(400);
+    }
+
     public function test_vendedor_no_puede_ver_ventas_de_otro()
     {
         $ventaAjena = Venta::create([
