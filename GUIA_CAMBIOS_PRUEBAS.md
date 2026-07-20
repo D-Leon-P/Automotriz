@@ -39,3 +39,9 @@ Tras implementar las optimizaciones y realizar la ejecución final de la prueba 
 - **Tasa de fallas de infraestructura (`http_req_failed`):** `0.00%` (Todas las peticiones fueron procesadas exitosamente).
 - **Percentil 95 (p95):** `126.52 ms` (Cumpliendo holgadamente el criterio de aceptación del cliente que requería tiempos de respuesta `< 2.0s`).
 - **Peticiones exitosas totales:** 4,245 peticiones completadas a un ritmo de `59.46 req/seg`.
+
+## 5. Ejecutar pruebas
+k6 run tests/stress-test.js
+
+## En caso fallen las pruebas y el error sea 500 el stock se ha agotado, ejecutar: 
+docker exec -i automotriz-db mysql -u root -prootpassword -e "UPDATE prospects_db.vehiculos SET stock = 140; UPDATE sales_db.vehiculos SET stock = 140;"

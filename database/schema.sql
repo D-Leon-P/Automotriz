@@ -347,12 +347,12 @@ INSERT INTO empleados (id, nombre, email, password, rol_id) VALUES
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO vehiculos (id, marca, modelo, anio, precio, stock) VALUES
-(1, 'Toyota', 'Corolla Hybrid', 2026, 26500.00, 10),
-(2, 'Hyundai', 'Tucson', 2026, 31000.00, 5),
-(3, 'Kia', 'Sportage', 2025, 29000.00, 8),
-(4, 'Mazda', 'CX-30', 2026, 28000.00, 4),
-(5, 'Ford', 'Mustang GT', 2025, 55000.00, 2)
-ON DUPLICATE KEY UPDATE id=id;
+(1, 'Toyota', 'Corolla Hybrid', 2026, 26500.00, 140),
+(2, 'Hyundai', 'Tucson', 2026, 31000.00, 140),
+(3, 'Kia', 'Sportage', 2025, 29000.00, 140),
+(4, 'Mazda', 'CX-30', 2026, 28000.00, 140),
+(5, 'Ford', 'Mustang GT', 2025, 55000.00, 140)
+ON DUPLICATE KEY UPDATE marca=VALUES(marca), modelo=VALUES(modelo), anio=VALUES(anio), precio=VALUES(precio), stock=VALUES(stock);
 
 INSERT INTO prospectos (id, nombre, email, telefono, vehiculo_id, etapa, empleado_id) VALUES
 (1, 'Alejandro Sanz', 'alejandro@example.com', '+51987654321', 1, 'prospeccion', 1),
@@ -390,12 +390,12 @@ INSERT INTO empleados (id, nombre, email, password, rol_id) VALUES
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO vehiculos (id, marca, modelo, anio, precio, stock) VALUES
-(1, 'Toyota', 'Corolla Hybrid', 2026, 26500.00, 10),
-(2, 'Hyundai', 'Tucson', 2026, 31000.00, 5),
-(3, 'Kia', 'Sportage', 2025, 29000.00, 8),
-(4, 'Mazda', 'CX-30', 2026, 28000.00, 4),
-(5, 'Ford', 'Mustang GT', 2025, 55000.00, 2)
-ON DUPLICATE KEY UPDATE id=id;
+(1, 'Toyota', 'Corolla Hybrid', 2026, 26500.00, 140),
+(2, 'Hyundai', 'Tucson', 2026, 31000.00, 140),
+(3, 'Kia', 'Sportage', 2025, 29000.00, 140),
+(4, 'Mazda', 'CX-30', 2026, 28000.00, 140),
+(5, 'Ford', 'Mustang GT', 2025, 55000.00, 140)
+ON DUPLICATE KEY UPDATE marca=VALUES(marca), modelo=VALUES(modelo), anio=VALUES(anio), precio=VALUES(precio), stock=VALUES(stock);
 
 INSERT INTO prospectos (id, nombre, email, telefono, vehiculo_id, etapa, empleado_id) VALUES
 (1, 'Alejandro Sanz', 'alejandro@example.com', '+51987654321', 1, 'prospeccion', 1),
