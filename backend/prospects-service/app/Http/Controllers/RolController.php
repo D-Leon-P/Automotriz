@@ -93,12 +93,9 @@ class RolController extends Controller
 
         // Notificar cambios de permisos por WebSocket tras transacción exitosa
         try {
-            \Illuminate\Support\Facades\Http::timeout(1)->post('http://websocket-service:6001/publish', [
-                'event' => 'permissions.updated',
-                'data' => ['rol_id' => (int)$id]
-            ]);
+            \App\Jobs\NotifyWebSocketJob::dispatch('permissions.updated', ['rol_id' => (int)$id]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Error al publicar en WebSocket: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("Error al despachar Job de WebSocket: " . $e->getMessage());
         }
 
         return $response;

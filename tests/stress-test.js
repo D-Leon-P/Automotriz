@@ -29,11 +29,11 @@ export function setup() {
 
   const res = http.post(loginUrl, payload, params);
   
-  if (res.status === 200) {
-    const token = res.json('access_token');
+  if (res.status === 200 && res.cookies.auth_token && res.cookies.auth_token.length > 0) {
+    const token = res.cookies.auth_token[0].value;
     return { token: token };
   } else {
-    console.error('ERROR EN SETUP: No se pudo iniciar sesión para la prueba de estrés');
+    console.error('ERROR EN SETUP: No se pudo iniciar sesión para la prueba de estrés (cookie auth_token no encontrada)');
     return { token: null };
   }
 }
