@@ -11,6 +11,7 @@ use App\Models\Venta;
 use App\Services\VentaService;
 use App\Repositories\VentaRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class VentaServiceTest extends TestCase
@@ -25,6 +26,7 @@ class VentaServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Queue::fake();
 
         // Crear roles y permisos
         $roleAdmin = Rol::create(['id' => 1, 'nombre' => 'administrador']);
@@ -141,5 +143,83 @@ class VentaServiceTest extends TestCase
 
         // Verificar que la etapa del prospecto igualmente cambió a cierre (fin del ciclo)
         $this->assertEquals('cierre', $this->prospecto->fresh()->etapa);
+    }
+
+    /** @test */
+    public function actualizar_venta_cambio_vehiculo_modifica_stocks()
+    {
+        // 1. Crear otro vehículo para el intercambio
+        $otroVehiculo = Vehiculo::create([
+            'marca' => 'Hyundai',
+            'modelo' => 'Tucson',
+            'anio' => 2026,
+            'precio' => 30000.00,
+            'stock' => 3
+        ]);
+
+        // 2. Registrar venta efectiva original (resta stock de $this->vehiculo: de 5 a 4)
+        $venta = $this->ventaService->createVenta([
+            'prospecto_id' => $this->prospecto->id,
+            'vehiculo_id' => $this->vehiculo->id,
+            'empleado_id' => $this->vendedor->id,
+            'monto' => 19500.00,
+            'estado' => 'efectiva'
+        ]);
+
+        $this->assertEquals(4, $this->vehiculo->fresh()->stock);
+        $this->assertEquals(3, $otroVehiculo->fresh()->stock);
+
+        // 3. Actualizar la venta para que sea del otro vehículo
+        $this->ventaService->updateVenta($venta->id, [
+            'vehiculo_id' => $otroVehiculo->id,
+            'estado' => 'efectiva'
+        ], $this->vendedor->id);
+
+        // 4. Verificar que se devolvió stock al original y se quitó al nuevo
+        $this->assertEquals(5, $this->vehiculo->fresh()->stock); // Devuelve
+        $this->assertEquals(2, $otroVehiculo->fresh()->stock); // Descuenta
+
+        // 5. Verificar que el vehículo del prospecto se sincronizó automáticamente
+        $this->assertEquals($otroVehiculo->id, $this->prospecto->fresh()->vehiculo_id);
+    }
+
+    /** @test */
+    public function actualizar_venta_prospecto_duplicado_falla()
+    {
+        // 1. Crear otro prospecto
+        $otroProspecto = Prospecto::create([
+            'nombre' => 'Otro Cliente',
+            'email' => 'otro@cliente.com',
+            'telefono' => '999111222',
+            'vehiculo_id' => $this->vehiculo->id,
+            'etapa' => 'prospeccion',
+            'empleado_id' => $this->vendedor->id
+        ]);
+
+        // 2. Registrar venta para prospecto original
+        $venta1 = $this->ventaService->createVenta([
+            'prospecto_id' => $this->prospecto->id,
+            'vehiculo_id' => $this->vehiculo->id,
+            'empleado_id' => $this->vendedor->id,
+            'monto' => 19500.00,
+            'estado' => 'efectiva'
+        ]);
+
+        // 3. Registrar venta para otroProspecto
+        $venta2 = $this->ventaService->createVenta([
+            'prospecto_id' => $otroProspecto->id,
+            'vehiculo_id' => $this->vehiculo->id,
+            'empleado_id' => $this->vendedor->id,
+            'monto' => 19500.00,
+            'estado' => 'efectiva'
+        ]);
+
+        // 4. Intentar actualizar venta1 para asignarla al otroProspecto (debe fallar)
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("El nuevo prospecto seleccionado ya tiene una venta asociada.");
+
+        $this->ventaService->updateVenta($venta1->id, [
+            'prospecto_id' => $otroProspecto->id
+        ], $this->vendedor->id);
     }
 }

@@ -97,6 +97,15 @@ class SeguroControllerTest extends TestCase
             'estado' => 'efectiva'
         ]);
 
+        $this->venta3 = Venta::create([
+            'id' => 30,
+            'prospecto_id' => 1,
+            'vehiculo_id' => 1,
+            'empleado_id' => $this->vendedor1->id,
+            'monto' => 30000.00,
+            'estado' => 'efectiva'
+        ]);
+
         $this->seguro1 = Seguro::create([
             'venta_id' => $this->venta1->id,
             'tipo_seguro' => 'todo_riesgo',
@@ -136,19 +145,10 @@ class SeguroControllerTest extends TestCase
     {
         Http::fake();
 
-        $ventaNueva = Venta::create([
-            'id' => 101,
-            'prospecto_id' => 1,
-            'vehiculo_id' => 1,
-            'empleado_id' => $this->vendedor1->id,
-            'monto' => 30000.00,
-            'estado' => 'efectiva'
-        ]);
-
         $response = $this->withHeaders([
             'Authorization' => "Bearer {$this->vendedor1Token}"
         ])->postJson('/api/seguros', [
-            'venta_id' => $ventaNueva->id,
+            'venta_id' => $this->venta3->id,
             'tipo_seguro' => 'terceros',
             'prima_esperada' => 800.00,
             'prima_real' => 800.00,
@@ -158,8 +158,24 @@ class SeguroControllerTest extends TestCase
         $response->assertStatus(201);
         $this->assertDatabaseHas('seguros', [
             'tipo_seguro' => 'terceros',
-            'venta_id' => $ventaNueva->id
+            'venta_id' => $this->venta3->id
         ]);
+    }
+
+    public function test_vendedor_no_puede_vincular_seguro_duplicado_a_la_misma_venta()
+    {
+        // venta1 ya tiene seguro1 asignado
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer {$this->vendedor1Token}"
+        ])->postJson('/api/seguros', [
+            'venta_id' => $this->venta1->id,
+            'tipo_seguro' => 'terceros',
+            'prima_esperada' => 800.00,
+            'prima_real' => 800.00,
+            'estado' => 'prospectado'
+        ]);
+
+        $response->assertStatus(400); // Falla por Exception
     }
 
     public function test_vendedor_no_puede_vincular_seguro_a_venta_de_otro()
@@ -217,19 +233,10 @@ class SeguroControllerTest extends TestCase
     {
         Http::fake();
 
-        $ventaNuevaXss = Venta::create([
-            'id' => 102,
-            'prospecto_id' => 1,
-            'vehiculo_id' => 1,
-            'empleado_id' => $this->vendedor1->id,
-            'monto' => 30000.00,
-            'estado' => 'efectiva'
-        ]);
-
         $response = $this->withHeaders([
             'Authorization' => "Bearer {$this->vendedor1Token}"
         ])->postJson('/api/seguros', [
-            'venta_id' => $ventaNuevaXss->id,
+            'venta_id' => $this->venta3->id,
             'tipo_seguro' => '<script>alert("hack")</script> Rímac',
             'prima_esperada' => 1200.00,
             'prima_real' => 1200.00,
@@ -257,5 +264,36 @@ class SeguroControllerTest extends TestCase
         ]);
 
         $response->assertStatus(400); // Bad Request (Exception caught)
+    }
+
+    public function test_vendedor_no_puede_cambiar_venta_a_una_que_ya_tiene_seguro_en_update()
+    {
+        // seguro1 está en venta1
+        $ventaConSeguro = Venta::create([
+            'id' => 40,
+            'prospecto_id' => 1,
+            'vehiculo_id' => 1,
+            'empleado_id' => $this->vendedor1->id,
+            'monto' => 30000.00,
+            'estado' => 'efectiva'
+        ]);
+
+        // Crear seguro para esa venta
+        Seguro::create([
+            'venta_id' => $ventaConSeguro->id,
+            'tipo_seguro' => 'terceros',
+            'prima_esperada' => 800.00,
+            'prima_real' => 800.00,
+            'estado' => 'prospectado'
+        ]);
+
+        // Intentar actualizar seguro1 para que apunte a ventaConSeguro
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer {$this->vendedor1Token}"
+        ])->putJson("/api/seguros/{$this->seguro1->id}", [
+            'venta_id' => $ventaConSeguro->id
+        ]);
+
+        $response->assertStatus(400); // Falla por Exception
     }
 }

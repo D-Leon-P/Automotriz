@@ -140,7 +140,7 @@ class SalesControllerTest extends TestCase
             'monto' => 31000.00,
             'estado' => 'efectiva'
         ]);
-        
+
         // 2. Intentar registrar otra venta para el mismo prospecto via controller
         $response = $this->withHeaders([
             'Authorization' => "Bearer {$this->vendedor1Token}"
