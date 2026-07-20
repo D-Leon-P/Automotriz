@@ -178,6 +178,9 @@ class VentaServiceTest extends TestCase
         // 4. Verificar que se devolvió stock al original y se quitó al nuevo
         $this->assertEquals(5, $this->vehiculo->fresh()->stock); // Devuelve
         $this->assertEquals(2, $otroVehiculo->fresh()->stock); // Descuenta
+
+        // 5. Verificar que el vehículo del prospecto se sincronizó automáticamente
+        $this->assertEquals($otroVehiculo->id, $this->prospecto->fresh()->vehiculo_id);
     }
 
     /** @test */

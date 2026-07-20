@@ -41,6 +41,11 @@ class VentaService
             if (DB::table('ventas')->where('prospecto_id', $data['prospecto_id'])->whereNull('deleted_at')->exists()) {
                 throw new \Exception("El prospecto ya tiene una venta asociada.");
             }
+
+            // Sincronizar el vehículo del prospecto con el de la venta si difieren
+            if ($prospecto->vehiculo_id !== $data['vehiculo_id']) {
+                $prospecto->update(['vehiculo_id' => $data['vehiculo_id']]);
+            }
             
             // 2. Obtener el vehículo
             $vehiculo = Vehiculo::findOrFail($data['vehiculo_id']);
@@ -123,6 +128,12 @@ class VentaService
             // Evitar transferencias maliciosas a otros empleados si no es admin
             if ($empleadoId !== null) {
                 unset($data['empleado_id']);
+            }
+
+            // 3. Sincronizar el vehículo del prospecto con el de la venta si difieren
+            $prospecto = Prospecto::findOrFail($nuevoProspectoId);
+            if ($prospecto->vehiculo_id !== $nuevoVehiculoId) {
+                $prospecto->update(['vehiculo_id' => $nuevoVehiculoId]);
             }
 
             $updatedVenta = $this->ventaRepository->update($id, $data, $empleadoId);
