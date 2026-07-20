@@ -16,6 +16,7 @@ return new class extends Migration
             $table->decimal('monto', 10, 2);
             $table->enum('estado', ['efectiva', 'fallida']);
             $table->string('motivo_perdida', 255)->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

@@ -32,6 +32,7 @@ return new class extends Migration
             $table->string('email', 100)->unique();
             $table->string('password', 255);
             $table->foreignId('rol_id')->constrained('roles')->onDelete('restrict');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

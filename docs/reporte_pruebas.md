@@ -19,19 +19,24 @@ La fase de pruebas del CRM Automotriz se diseñó para validar:
 Las suites de pruebas automatizadas fueron ejecutadas con éxito sobre bases de datos aisladas, arrojando un **100% de efectividad**:
 
 ### A. Microservicio de Prospectos (`prospects-service`)
-*   **Comando:** `docker-compose exec -T prospects-service ./vendor/bin/phpunit`
-*   **Resultado:** `OK (10 tests, 37 assertions)`
-*   **Alcance:** Validación de flujo de creación de prospectos, verificación de límites de stock de vehículos de interés, sanitización de datos (XSS) y validación de tokens JWT.
+*   **Comando:** `docker compose exec -T prospects-service php artisan test --coverage`
+*   **Resultado:** `OK (35 tests, 98 assertions) - Cobertura: 84.4 %`
+*   **Alcance:** Validación de flujo de creación de prospectos, verificación de límites de stock de vehículos de interés, sanitización de datos (XSS), autenticación con JWT y cookies httponly, y colas asíncronas con Laravel Jobs.
 
 ### B. Microservicio de Ventas (`sales-service`)
-*   **Comando:** `docker-compose exec -T sales-service ./vendor/bin/phpunit`
-*   **Resultado:** `OK (7 tests, 15 assertions)`
-*   **Alcance:** Registro de transacciones efectivas y fallidas, validación de existencia de prospectos réplicas, lógica de negocio de decremento de stock y soft deletes de ventas.
+*   **Comando:** `docker compose exec -T sales-service php artisan test --coverage`
+*   **Resultado:** `OK (24 tests, 50 assertions) - Cobertura: 81.1 %`
+*   **Alcance:** Registro de transacciones efectivas y fallidas, validación de existencia de prospectos réplicas, lógica de negocio de decremento de stock, soft deletes de ventas y gestión CRUD de clientes.
 
 ### C. Microservicio de Seguros (`insurance-service`)
-*   **Comando:** `docker-compose exec -T insurance-service ./vendor/bin/phpunit`
-*   **Resultado:** `OK (2 tests, 2 assertions)`
-*   **Alcance:** Registro de pólizas vehiculares asociadas a ventas efectivas y verificación del estado del seguro.
+*   **Comando:** `docker compose exec -T insurance-service php artisan test --coverage`
+*   **Resultado:** `OK (8 tests, 14 assertions) - Cobertura: 81.0 %`
+*   **Alcance:** Registro de pólizas vehiculares asociadas a ventas efectivas, verificación del estado del seguro, mitigación de vulnerabilidad BOLA, sanitización de inyecciones de script (Stored XSS) y consistencia en borrado suave.
+
+### D. Microservicio de Dashboard (`dashboard-service`)
+*   **Comando:** `docker compose exec -T dashboard-service php artisan test --coverage`
+*   **Resultado:** `OK (5 tests, 7 assertions) - Cobertura: 84.6 %`
+*   **Alcance:** Consolidación de métricas de embudo de ventas, prospectos y seguros contratados. Filtros de visualización por vendedor o global para administradores. Compatibilidad ANSI SQL para SQLite en entornos de pruebas.
 
 ---
 

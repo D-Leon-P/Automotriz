@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('vehiculo_id')->constrained('vehiculos');
             $table->enum('etapa', ['prospeccion', 'calificacion', 'negociacion', 'cierre'])->default('prospeccion');
             $table->foreignId('empleado_id')->constrained('empleados');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

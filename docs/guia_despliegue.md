@@ -32,15 +32,15 @@ Cada uno de los microservicios de backend tiene un archivo de configuración `.e
 ### Clave de Webhook de n8n
 Para la comunicación interna dentro de la red puente de Docker (`automotriz-network`), se debe usar el host **`n8n`** (el nombre del servicio en `docker-compose.yml`) en lugar de `localhost`:
 
-*   **Archivo [prospects-service/.env](file:///c:/Users/USUARIO/Desktop/PruebasDeSoftware/Automotriz/backend/prospects-service/.env#L61):**
+*   **Archivo [prospects-service/.env](file:///c:/Users/Ysarmiento/Desktop/Marcaciones/Automotriz/backend/prospects-service/.env#L61):**
     ```env
     N8N_WEBHOOK_URL=http://n8n:5678/webhook/prospectos
     ```
-*   **Archivo [sales-service/.env](file:///c:/Users/USUARIO/Desktop/PruebasDeSoftware/Automotriz/backend/sales-service/.env#L61):**
+*   **Archivo [sales-service/.env](file:///c:/Users/Ysarmiento/Desktop/Marcaciones/Automotriz/backend/sales-service/.env#L61):**
     ```env
     N8N_WEBHOOK_URL=http://n8n:5678/webhook/ventas
     ```
-*   **Archivo [insurance-service/.env](file:///c:/Users/USUARIO/Desktop/PruebasDeSoftware/Automotriz/backend/insurance-service/.env#L61):**
+*   **Archivo [insurance-service/.env](file:///c:/Users/Ysarmiento/Desktop/Marcaciones/Automotriz/backend/insurance-service/.env#L61):**
     ```env
     N8N_WEBHOOK_URL=http://n8n:5678/webhook/seguros
     ```
@@ -80,7 +80,7 @@ Abre tu navegador e ingresa a: **`http://localhost:5678`**
 ### Paso 2: Importar el Workflow
 1.  Crea una cuenta inicial de propietario (si es el primer inicio).
 2.  Ve a **Workflows** ➔ **Add Workflow** ➔ Haz clic en el menú de los tres puntos de la esquina superior derecha ➔ Selecciona **Import from File**.
-3.  Selecciona el archivo [workflows.json](file:///c:/Users/USUARIO/Desktop/PruebasDeSoftware/Automotriz/n8n/workflows.json) ubicado en la carpeta `n8n/` de tu proyecto.
+3.  Selecciona el archivo [workflows.json](file:///c:/Users/Ysarmiento/Desktop/Marcaciones/Automotriz/n8n/workflows.json) ubicado en la carpeta `n8n/` de tu proyecto.
 
 ### Paso 3: Configurar Credenciales de Base de Datos en n8n
 En el editor visual de n8n, verás nodos de base de datos MySQL (por ejemplo, `Sync: Upsert Prospecto (Sales)`). Debes vincular tu conexión MySQL a cada uno de ellos:
