@@ -34,6 +34,11 @@ class SeguroService
             throw new \Exception("No autorizado para operar con esta venta.");
         }
 
+        // Validar que la venta no tenga ya un seguro asociado
+        if (\Illuminate\Support\Facades\DB::table('seguros')->where('venta_id', $data['venta_id'])->whereNull('deleted_at')->exists()) {
+            throw new \Exception("La venta ya cuenta con un seguro asociado.");
+        }
+
         $seguro = $this->seguroRepository->create($data);
         $this->notifyN8n('created', $seguro);
         return $seguro;
@@ -47,11 +52,21 @@ class SeguroService
             throw new \Exception("Seguro no encontrado o no autorizado.");
         }
 
-        // Si se cambia la venta asociada, validar que la nueva venta también le pertenezca
+        // Si se cambia la venta asociada, validar que la nueva venta también le pertenezca y no tenga seguro
         if (isset($data['venta_id'])) {
             $venta = Venta::findOrFail($data['venta_id']);
             if ($empleadoId !== null && $venta->empleado_id !== $empleadoId) {
                 throw new \Exception("No autorizado para asociar la nueva venta.");
+            }
+
+            if ($data['venta_id'] != $seguro->venta_id) {
+                if (\Illuminate\Support\Facades\DB::table('seguros')
+                    ->where('venta_id', $data['venta_id'])
+                    ->where('id', '!=', $id)
+                    ->whereNull('deleted_at')
+                    ->exists()) {
+                    throw new \Exception("La nueva venta seleccionada ya cuenta con un seguro asociado.");
+                }
             }
         }
 

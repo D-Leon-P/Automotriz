@@ -36,6 +36,11 @@ class VentaService
             if ($empleadoId !== null && $prospecto->empleado_id !== $empleadoId) {
                 throw new \Exception("No autorizado para operar con este prospecto.");
             }
+
+            // Validar que el prospecto no tenga ya una venta registrada
+            if (DB::table('ventas')->where('prospecto_id', $data['prospecto_id'])->whereNull('deleted_at')->exists()) {
+                throw new \Exception("El prospecto ya tiene una venta asociada.");
+            }
             
             // 2. Obtener el vehículo
             $vehiculo = Vehiculo::findOrFail($data['vehiculo_id']);
@@ -78,16 +83,40 @@ class VentaService
             $originalEstado = $venta->estado;
             $nuevoEstado = $data['estado'] ?? $originalEstado;
 
-            // Manejo de cambios de estado que impactan stock
-            if ($originalEstado !== $nuevoEstado) {
-                $vehiculo = Vehiculo::findOrFail($venta->vehiculo_id);
-                if ($originalEstado === 'fallida' && $nuevoEstado === 'efectiva') {
-                    if ($vehiculo->stock <= 0) {
-                        throw new \Exception("No hay stock suficiente para cambiar la venta a efectiva.");
+            $originalVehiculoId = $venta->vehiculo_id;
+            $nuevoVehiculoId = $data['vehiculo_id'] ?? $originalVehiculoId;
+
+            $originalProspectoId = $venta->prospecto_id;
+            $nuevoProspectoId = $data['prospecto_id'] ?? $originalProspectoId;
+
+            // 1. Validar prospecto si cambia
+            if ($originalProspectoId !== $nuevoProspectoId) {
+                if (DB::table('ventas')
+                    ->where('prospecto_id', $nuevoProspectoId)
+                    ->where('id', '!=', $id)
+                    ->whereNull('deleted_at')
+                    ->exists()) {
+                    throw new \Exception("El nuevo prospecto seleccionado ya tiene una venta asociada.");
+                }
+            }
+
+            // 2. Manejo de cambios de vehículo o estado que impactan stock
+            if ($originalVehiculoId !== $nuevoVehiculoId || $originalEstado !== $nuevoEstado) {
+                // Deshacer el stock de la venta original si era efectiva
+                if ($originalEstado === 'efectiva') {
+                    $originalVehiculo = Vehiculo::find($originalVehiculoId);
+                    if ($originalVehiculo) {
+                        $originalVehiculo->increment('stock');
                     }
-                    $vehiculo->decrement('stock');
-                } elseif ($originalEstado === 'efectiva' && $nuevoEstado === 'fallida') {
-                    $vehiculo->increment('stock');
+                }
+
+                // Aplicar el stock de la nueva venta si es efectiva
+                if ($nuevoEstado === 'efectiva') {
+                    $nuevoVehiculo = Vehiculo::findOrFail($nuevoVehiculoId);
+                    if ($nuevoVehiculo->stock <= 0) {
+                        throw new \Exception("No hay stock suficiente del vehículo seleccionado.");
+                    }
+                    $nuevoVehiculo->decrement('stock');
                 }
             }
 
