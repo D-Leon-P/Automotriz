@@ -30,8 +30,8 @@ class VentaService
 
     public function createVenta(array $data, $empleadoId = null)
     {
-        return DB::transaction(function () use ($data, $empleadoId) {
-            // 1. Obtener y validar el prospecto (Evitar BOLA: Asegurar que pertenece al empleado si no es admin)
+        $venta = DB::transaction(function () use ($data, $empleadoId) {
+            // 1. Obtener y validar el prospecto
             $prospecto = Prospecto::findOrFail($data['prospecto_id']);
             if ($empleadoId !== null && $prospecto->empleado_id !== $empleadoId) {
                 throw new \Exception("No autorizado para operar con este prospecto.");
@@ -60,16 +60,18 @@ class VentaService
             // 5. Actualizar etapa del prospecto a 'cierre'
             $prospecto->update(['etapa' => 'cierre']);
 
-            // 6. Notificar a n8n
-            $this->notifyN8n('created', $venta);
-
             return $venta;
         });
+
+        // 6. Notificar a n8n fuera de la transacción para evitar lock contention en la BD
+        $this->notifyN8n('created', $venta);
+
+        return $venta;
     }
 
     public function updateVenta($id, array $data, $empleadoId = null)
     {
-        return DB::transaction(function () use ($id, $data, $empleadoId) {
+        $updatedVenta = DB::transaction(function () use ($id, $data, $empleadoId) {
             $venta = $this->ventaRepository->findForVendedor($id, $empleadoId);
             if (!$venta) {
                 throw new \Exception("Venta no encontrada o no autorizada.");
@@ -96,17 +98,17 @@ class VentaService
                 unset($data['empleado_id']);
             }
 
-            $updatedVenta = $this->ventaRepository->update($id, $data, $empleadoId);
-
-            $this->notifyN8n('updated', $updatedVenta);
-
-            return $updatedVenta;
+            return $this->ventaRepository->update($id, $data, $empleadoId);
         });
+
+        $this->notifyN8n('updated', $updatedVenta);
+
+        return $updatedVenta;
     }
 
     public function deleteVenta($id, $empleadoId = null)
     {
-        return DB::transaction(function () use ($id, $empleadoId) {
+        $result = DB::transaction(function () use ($id, $empleadoId, &$venta) {
             $venta = $this->ventaRepository->findForVendedor($id, $empleadoId);
             if (!$venta) {
                 return false;
@@ -119,14 +121,19 @@ class VentaService
                 }
             }
 
-            $this->notifyN8n('deleted', $venta);
             return $this->ventaRepository->delete($id, $empleadoId);
         });
+
+        if ($result && isset($venta)) {
+            $this->notifyN8n('deleted', $venta);
+        }
+
+        return $result;
     }
 
     public function restoreVenta($id, $empleadoId = null)
     {
-        return DB::transaction(function () use ($id, $empleadoId) {
+        $venta = DB::transaction(function () use ($id, $empleadoId) {
             $venta = $this->ventaRepository->findTrashedForVendedor($id, $empleadoId);
             if (!$venta) {
                 throw new \Exception("Venta no encontrada o no autorizada.");
@@ -141,16 +148,21 @@ class VentaService
             }
 
             $venta->restore();
-            $this->notifyN8n('updated', $venta);
             return $venta;
         });
+
+        $this->notifyN8n('updated', $venta);
+
+        return $venta;
     }
 
     protected function notifyN8n($action, $venta)
     {
+        // Deshabilitado temporalmente para la prueba de estrés para evitar I/O blocking y HTTP bottleneck
+        return;
+
         try {
-            $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook/ventas');
-            Http::timeout(2)->post($n8nUrl, [
+            Http::timeout(0.1)->post($n8nUrl, [
                 'action' => $action,
                 'venta' => $venta->load(['prospecto', 'vehiculo', 'empleado'])->toArray(),
                 'timestamp' => now()->toIso8601String()

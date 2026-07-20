@@ -1,7 +1,16 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
-// Configuración de las fases de la prueba de estrés
+// ============================================================
+// PRUEBA DE ESTRÉS: 50 y 100 Ventas Simultáneas
+// Métricas: tiempo de respuesta, tasa de error, uso de recursos
+// Criterio de aceptación 7.2: p(95) < 2s para 100 VUs
+// ============================================================
+
+const BASE_URL = 'http://localhost';
+
+// Configuración de las fases de la prueba
 export const options = {
   stages: [
     { duration: '10s', target: 50 },  // Rampa de subida a 50 usuarios simultáneos (carga media)
@@ -17,64 +26,121 @@ export const options = {
 };
 
 // Función setup: Se ejecuta una vez al inicio. Ideal para obtener el token JWT.
+// Obtener lista de vehículos
 export function setup() {
-  const loginUrl = 'http://localhost/api/auth/login';
-  const payload = JSON.stringify({
+  // 1. Login
+  const loginRes = http.post(`${BASE_URL}/api/auth/login`, JSON.stringify({
     email: 'juan.perez@automotriz.com',
     password: 'password123',
-  });
-  const params = {
+  }), {
     headers: { 'Content-Type': 'application/json' },
-  };
+  });
 
-  const res = http.post(loginUrl, payload, params);
-  
-  if (res.status === 200) {
-    const token = res.json('access_token');
-    return { token: token };
-  } else {
-    console.error('ERROR EN SETUP: No se pudo iniciar sesión para la prueba de estrés');
-    return { token: null };
+  if (loginRes.status !== 200) {
+    console.error(`LOGIN FALLÓ: status=${loginRes.status}`);
+    return { token: null, vehiculos: [] };
   }
+
+  const token = loginRes.cookies['auth_token']?.[0]?.value;
+  if (!token) {
+    console.error('LOGIN FALLÓ: No se obtuvo auth_token cookie');
+    return { token: null, vehiculos: [] };
+  }
+
+  console.log('LOGIN exitoso. Obteniendo vehículos...');
+
+  // 2. Obtener vehículos
+  const vehiculosRes = http.get(`${BASE_URL}/api/vehiculos`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+    cookies: { auth_token: token },
+  });
+
+  let vehiculos = [];
+  if (vehiculosRes.status === 200) {
+    vehiculos = JSON.parse(vehiculosRes.body);
+    console.log(`Vehículos encontrados: ${vehiculos.length}`);
+  } else {
+    console.error(`Error al obtener vehículos: ${vehiculosRes.status}`);
+  }
+
+  return { token, vehiculos };
 }
 
 // Función principal de carga ejecutada por cada Usuario Virtual (VU)
 export default function (data) {
-  if (!data.token) {
+  if (!data.token || !data.vehiculos || data.vehiculos.length === 0) {
     sleep(1);
     return;
   }
 
-  const url = 'http://localhost/api/ventas';
-  
-  // Simular la venta del vehículo #1 por parte de prospectos aleatorios (IDs de prueba 1 al 7)
+  // Seleccionar vehículo round-robin (distribuye carga entre todos)
+  const vehiculoIndex = __VU % data.vehiculos.length;
+  const vehiculo = data.vehiculos[vehiculoIndex];
+
+  // Seleccionar prospecto aleatorio (IDs 1-7)
   const randomProspectId = Math.floor(Math.random() * 7) + 1;
-  const randomStatus = Math.random() > 0.3 ? 'efectiva' : 'fallida';
-  
+
+  // 70% ventas efectivas / 30% fallidas
+  const esEfectiva = Math.random() > 0.3;
+  const estado = esEfectiva ? 'efectiva' : 'fallida';
+
   const payload = JSON.stringify({
     prospecto_id: randomProspectId,
-    vehiculo_id: 1, // Corolla Hybrid
-    vendedor_id: 1, // Juan Pérez
-    monto: 26500.00,
-    estado: randomStatus,
-    motivo_perdida: randomStatus === 'fallida' ? 'Presupuesto insuficiente en esta fase' : null,
+    vehiculo_id: vehiculo.id,
+    monto: vehiculo.precio,
+    estado: estado,
+    motivo_perdida: !esEfectiva ? 'Presupuesto insuficiente en fase de prueba de estrés' : null,
   });
 
   const params = {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${data.token}`,
     },
+    cookies: {
+      auth_token: data.token,
+    },
+    responseCallback: http.expectedStatuses(201, 400),
   };
 
-  const res = http.post(url, payload, params);
+  const res = http.post(`${BASE_URL}/api/ventas`, payload, params);
 
-  // Aserciones
+  // Aserciones: 201 (creada) o 400 (stock agotado / prospecto ya en cierre)
   check(res, {
-    'status es 201 o 400 (stock agotado esperado)': (r) => r.status === 201 || r.status === 400,
+    'status es 201 o 400 (comportamiento esperado)': (r) => r.status === 201 || r.status === 400,
     'tiempo de respuesta < 2s': (r) => r.timings.duration < 2000,
   });
 
   // Espaciar las peticiones entre 0.5s y 1.5s de forma realista
   sleep(Math.random() * 1 + 0.5);
+}
+
+// Exporta resultados a JSON + stdout
+export function handleSummary(data) {
+  const summary = {
+    // Métricas globales
+    total_requests: data.metrics.http_reqs?.values?.count || 0,
+    avg_duration_ms: data.metrics.http_req_duration?.values?.avg?.toFixed(2) || 0,
+    p50_ms: data.metrics.http_req_duration?.values?.['p(50)']?.toFixed(2) || 0,
+    p75_ms: data.metrics.http_req_duration?.values?.['p(75)']?.toFixed(2) || 0,
+    p90_ms: data.metrics.http_req_duration?.values?.['p(90)']?.toFixed(2) || 0,
+    p95_ms: data.metrics.http_req_duration?.values?.['p(95)']?.toFixed(2) || 0,
+    p99_ms: data.metrics.http_req_duration?.values?.['p(99)']?.toFixed(2) || 0,
+    max_duration_ms: data.metrics.http_req_duration?.values?.max?.toFixed(2) || 0,
+    error_rate: ((data.metrics.http_req_failed?.values?.rate || 0) * 100).toFixed(2) + '%',
+    http_reqs_per_second: data.metrics.http_reqs?.values?.rate?.toFixed(2) || 0,
+
+    // Evaluación contra criterios de aceptación
+    criterio_aceptacion: {
+      p95_less_than_2s: (data.metrics.http_req_duration?.values?.['p(95)'] || 0) < 2000,
+      error_rate_less_than_5pct: (data.metrics.http_req_failed?.values?.rate || 0) < 0.05,
+    },
+
+    // Datos raw para análisis posterior
+    raw_metrics: data.metrics,
+  };
+
+  return {
+    'tests/reportes/stress-result.json': JSON.stringify(summary, null, 2),
+    stdout: textSummary(data, { indent: ' ', enableColors: true }),
+  };
 }
