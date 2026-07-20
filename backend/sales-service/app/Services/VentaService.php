@@ -158,11 +158,9 @@ class VentaService
 
     protected function notifyN8n($action, $venta)
     {
-        // Deshabilitado temporalmente para la prueba de estrés para evitar I/O blocking y HTTP bottleneck
-        return;
-
         try {
-            Http::timeout(0.1)->post($n8nUrl, [
+            $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook/ventas');
+            Http::timeout(0.5)->post($n8nUrl, [
                 'action' => $action,
                 'venta' => $venta->load(['prospecto', 'vehiculo', 'empleado'])->toArray(),
                 'timestamp' => now()->toIso8601String()
