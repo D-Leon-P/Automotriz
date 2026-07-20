@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip opcache \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# 1.1 Instalar PCOV para cobertura de código en pruebas unitarias
+RUN pecl install pcov && docker-php-ext-enable pcov
+
 # Configurar OPcache para desarrollo en Docker sobre Windows (optimiza lectura de disco)
 RUN { \
         echo 'opcache.enable=1'; \

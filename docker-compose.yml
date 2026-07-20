@@ -63,6 +63,7 @@ services:
       - DB_USERNAME=automotriz_user
       - DB_PASSWORD=automotriz_pass
       - JWT_SECRET=3x4mp1e_jwt_s3cr3t_k3y_prospects_service_123456
+      - QUEUE_CONNECTION=database
     depends_on:
       - db
     networks:
@@ -99,6 +100,7 @@ services:
       - DB_USERNAME=automotriz_user
       - DB_PASSWORD=automotriz_pass
       - JWT_SECRET=3x4mp1e_jwt_s3cr3t_k3y_prospects_service_123456 # Shared secret for JWT verification
+      - QUEUE_CONNECTION=database
     depends_on:
       - db
     networks:

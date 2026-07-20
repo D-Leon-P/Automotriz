@@ -87,15 +87,12 @@ class EmpleadoController extends Controller
 
         // Notificar cambios de empleado por WebSocket
         try {
-            \Illuminate\Support\Facades\Http::timeout(1)->post('http://websocket-service:6001/publish', [
-                'event' => 'employee.updated',
-                'data' => [
-                    'empleado_id' => (int)$id,
-                    'rol_id' => (int)$request->rol_id
-                ]
+            \App\Jobs\NotifyWebSocketJob::dispatch('employee.updated', [
+                'empleado_id' => (int)$id,
+                'rol_id' => (int)$request->rol_id
             ]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Error al publicar en WebSocket: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("Error al despachar Job de WebSocket: " . $e->getMessage());
         }
 
         return response()->json([

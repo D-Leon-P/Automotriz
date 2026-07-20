@@ -15,6 +15,7 @@ return new class extends Migration
             $table->decimal('prima_esperada', 10, 2);
             $table->decimal('prima_real', 10, 2)->nullable();
             $table->enum('estado', ['prospectado', 'vendido'])->default('prospectado');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

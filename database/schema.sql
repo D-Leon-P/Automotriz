@@ -68,6 +68,27 @@ CREATE TABLE IF NOT EXISTS prospectos (
     KEY idx_prospectos_empleado (empleado_id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    queue VARCHAR(255) NOT NULL,
+    payload LONGTEXT NOT NULL,
+    attempts TINYINT UNSIGNED NOT NULL,
+    reserved_at INT UNSIGNED NULL,
+    available_at INT UNSIGNED NOT NULL,
+    created_at INT UNSIGNED NOT NULL,
+    KEY idx_jobs_queue (queue)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS failed_jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    uuid VARCHAR(255) NOT NULL UNIQUE,
+    connection TEXT NOT NULL,
+    queue TEXT NOT NULL,
+    payload LONGTEXT NOT NULL,
+    exception LONGTEXT NOT NULL,
+    failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 
 -- ========================================================
 -- 2. BASE DE DATOS: sales_db
@@ -168,6 +189,27 @@ CREATE TABLE IF NOT EXISTS ventas (
     KEY idx_ventas_empleado (empleado_id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    queue VARCHAR(255) NOT NULL,
+    payload LONGTEXT NOT NULL,
+    attempts TINYINT UNSIGNED NOT NULL,
+    reserved_at INT UNSIGNED NULL,
+    available_at INT UNSIGNED NOT NULL,
+    created_at INT UNSIGNED NOT NULL,
+    KEY idx_jobs_queue (queue)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS failed_jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    uuid VARCHAR(255) NOT NULL UNIQUE,
+    connection TEXT NOT NULL,
+    queue TEXT NOT NULL,
+    payload LONGTEXT NOT NULL,
+    exception LONGTEXT NOT NULL,
+    failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 
 -- ========================================================
 -- 3. BASE DE DATOS: insurance_db
@@ -234,6 +276,27 @@ CREATE TABLE IF NOT EXISTS seguros (
     deleted_at TIMESTAMP NULL,
     FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE RESTRICT,
     KEY idx_seguros_estado (estado)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    queue VARCHAR(255) NOT NULL,
+    payload LONGTEXT NOT NULL,
+    attempts TINYINT UNSIGNED NOT NULL,
+    reserved_at INT UNSIGNED NULL,
+    available_at INT UNSIGNED NOT NULL,
+    created_at INT UNSIGNED NOT NULL,
+    KEY idx_jobs_queue (queue)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS failed_jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    uuid VARCHAR(255) NOT NULL UNIQUE,
+    connection TEXT NOT NULL,
+    queue TEXT NOT NULL,
+    payload LONGTEXT NOT NULL,
+    exception LONGTEXT NOT NULL,
+    failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 
@@ -315,6 +378,27 @@ CREATE TABLE IF NOT EXISTS seguros (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
     FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    queue VARCHAR(255) NOT NULL,
+    payload LONGTEXT NOT NULL,
+    attempts TINYINT UNSIGNED NOT NULL,
+    reserved_at INT UNSIGNED NULL,
+    available_at INT UNSIGNED NOT NULL,
+    created_at INT UNSIGNED NOT NULL,
+    KEY idx_jobs_queue (queue)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS failed_jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    uuid VARCHAR(255) NOT NULL UNIQUE,
+    connection TEXT NOT NULL,
+    queue TEXT NOT NULL,
+    payload LONGTEXT NOT NULL,
+    exception LONGTEXT NOT NULL,
+    failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 

@@ -70,7 +70,7 @@ class DashboardRepository
                 'empleados.nombre',
                 DB::raw('COUNT(DISTINCT prospectos.id) as total_prospectos'),
                 DB::raw('COUNT(DISTINCT ventas.id) as ventas_efectivas'),
-                DB::raw('IF(COUNT(DISTINCT prospectos.id) > 0, (COUNT(DISTINCT ventas.id) / COUNT(DISTINCT prospectos.id)) * 100, 0) as tasa_conversion')
+                DB::raw('CASE WHEN COUNT(DISTINCT prospectos.id) > 0 THEN (COUNT(DISTINCT ventas.id) * 100.0 / COUNT(DISTINCT prospectos.id)) ELSE 0 END as tasa_conversion')
             );
             
         if ($empleadoId !== null) {

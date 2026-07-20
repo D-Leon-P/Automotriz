@@ -35,7 +35,6 @@ export function setup() {
   }), {
     headers: { 'Content-Type': 'application/json' },
   });
-
   if (loginRes.status !== 200) {
     console.error(`LOGIN FALLÓ: status=${loginRes.status}`);
     return { token: null, vehiculos: [] };

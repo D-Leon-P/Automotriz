@@ -155,18 +155,13 @@ class VentaService
 
         return $venta;
     }
-
     protected function notifyN8n($action, $venta)
     {
         try {
-            $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook/ventas');
-            Http::timeout(0.5)->post($n8nUrl, [
-                'action' => $action,
-                'venta' => $venta->load(['prospecto', 'vehiculo', 'empleado'])->toArray(),
-                'timestamp' => now()->toIso8601String()
-            ]);
+            $ventaData = $venta->load(['prospecto', 'vehiculo', 'empleado'])->toArray();
+            \App\Jobs\NotifyN8nJob::dispatch($action, $ventaData);
         } catch (\Exception $e) {
-            Log::error("Error al notificar venta a n8n: " . $e->getMessage());
+            Log::error("Error al despachar job de venta a n8n: " . $e->getMessage());
         }
     }
 }

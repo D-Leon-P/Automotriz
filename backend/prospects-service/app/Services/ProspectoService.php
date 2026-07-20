@@ -111,14 +111,10 @@ class ProspectoService
     protected function notifyN8n($action, $prospecto)
     {
         try {
-            $n8nUrl = env('N8N_WEBHOOK_URL', 'http://n8n:5678/webhook/prospectos');
-            Http::timeout(2)->post($n8nUrl, [
-                'action' => $action,
-                'prospecto' => $prospecto->load(['vehiculo', 'empleado'])->toArray(),
-                'timestamp' => now()->toIso8601String()
-            ]);
+            $prospectoData = $prospecto->load(['vehiculo', 'empleado'])->toArray();
+            \App\Jobs\NotifyN8nJob::dispatch($action, $prospectoData);
         } catch (\Exception $e) {
-            Log::error("Error al notificar a n8n: " . $e->getMessage());
+            Log::error("Error al despachar job de prospecto a n8n: " . $e->getMessage());
         }
     }
 }
